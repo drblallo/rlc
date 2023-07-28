@@ -6,9 +6,9 @@
 
 namespace mlir::rlc
 {
-#define GEN_PASS_DEF_EMITTYPETYPEACCESSORS
+#define GEN_PASS_DEF_EMITTYPETYPEACCESSORSPASS
 #include "rlc/dialect/Passes.inc"
-	struct EmitTypeTypeAccessors: public impl::EmitTypeTypeAccessorsBase<EmitTypeTypeAccessors>
+	struct EmitTypeTypeAccessors: public impl::EmitTypeTypeAccessorsPassBase<EmitTypeTypeAccessors>
 	{
 		void getDependentDialects(mlir::DialectRegistry& registry) const override
 		{
@@ -21,7 +21,7 @@ namespace mlir::rlc
 					"getTypeName",
 					mlir::FunctionType::get(
 							&getContext(),
-							mlir::TypeRange(),
+							mlir::TypeRange({  mlir::rlc::VoidType::get(&getContext())}),
 							mlir::TypeRange(
 									{ mlir::LLVM::LLVMPointerType::get(&getContext()) })));
 			auto realGetTypeName =
@@ -55,7 +55,7 @@ namespace mlir::rlc
 					"getTypeFieldsCount",
 					mlir::FunctionType::get(
 							&getContext(),
-							mlir::TypeRange(),
+							mlir::TypeRange({  mlir::rlc::VoidType::get(&getContext())}),
 							mlir::TypeRange(
 									{ mlir::rlc::IntegerType::getInt64(&getContext()) })));
 			auto realGetTypeFieldsCount =
@@ -89,7 +89,7 @@ namespace mlir::rlc
 					"getTypeFieldName",
 					mlir::FunctionType::get(
 							&getContext(),
-							{ mlir::TypeRange(), mlir::rlc::IntegerType::getInt64(&getContext()) },
+							mlir::TypeRange( {  mlir::rlc::VoidType::get(&getContext()) ,mlir::rlc::IntegerType::getInt64(&getContext()) }),
 							mlir::TypeRange(
 									{ mlir::LLVM::LLVMPointerType::get(&getContext()) })));
 			auto realGetTypeFieldName =
