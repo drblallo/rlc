@@ -487,6 +487,7 @@ int main(int argc, char *argv[])
 	manager.addPass(mlir::rlc::createActionStatementsToCoroPass());
 	manager.addPass(mlir::rlc::createLowerToLLVMPass());
 	manager.addPass(mlir::rlc::createRespectCReturnTypeCallingConventions());
+	manager.addPass(mlir::rlc::createEmitTypeTypeAccessorsPass());
 	if (not compileOnly)
 		manager.addPass(mlir::rlc::createEmitMainPass());
 	if (manager.run(ast).failed())
