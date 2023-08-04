@@ -3,6 +3,7 @@
 #include "mlir/Dialect/LLVMIR/LLVMTypes.h"
 #include "mlir/IR/MLIRContext.h"
 #include "mlir/Transforms/DialectConversion.h"
+#include "rlc/dialect/Operations.hpp"
 #include "rlc/dialect/Types.hpp"
 
 namespace mlir::rlc
@@ -123,5 +124,18 @@ namespace mlir::rlc
 							type.getContext(), type.getName(), fields));
 		});
 		converter.addConversion(voidToVoid);
+	}
+
+	mlir::LLVM::LLVMStructType getStructType(mlir::rlc::EntityDeclaration op, mlir::ConversionPatternRewriter& rewriter){
+		auto pointerType = mlir::LLVM::LLVMPointerType::get(rewriter.getI8Type());
+		auto i64Type = rewriter.getI64Type();
+		auto arrayType =
+				mlir::LLVM::LLVMArrayType::get(pointerType, op.getMemberTypes().size());
+		auto structTest = ::mlir::LLVM::LLVMStructType::getNewIdentified(
+				op->getContext(),
+				"globalVariableType",
+				::mlir::ArrayRef<mlir::Type>({ pointerType, i64Type, arrayType }));
+
+		return structTest;
 	}
 }	 // namespace mlir::rlc

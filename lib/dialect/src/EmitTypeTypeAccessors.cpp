@@ -34,7 +34,7 @@ namespace mlir::rlc
 			//auto name = builder.create<mlir::LLVM::ConstantOp>(getOperation()->getLoc(), mlir::LLVM::LLVMPointerType::get(&getContext()), getOperation().getBodyRegion().getArgumentTypes().front());
 			auto voidPointer = builder.create<mlir::LLVM::UndefOp>(getOperation()->getLoc(), getOperation().getBodyRegion().getArgumentTypes().front());
 			//auto voidPointer = builder.create<mlir::LLVM::UndefOp>(getOperation()->getLoc(), mlir::LLVM::LLVMPointerType::get(&getContext()));
-			
+			auto test = "__globalVariableName" + getOperation().getBodyRegion().getArgumentTypes().front().cast<mlir::rlc::EntityType>().mangledName();
 			//builder.create<mlir::LLVM::ReturnOp>(
 					//getOperation().getLoc(), mlir::ValueRange({ name }));
 			builder.create<mlir::LLVM::ReturnOp>(

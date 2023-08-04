@@ -173,6 +173,7 @@ class EntityDeclarationRewriter
 			OpAdaptor adaptor,
 			mlir::ConversionPatternRewriter& rewriter) const final
 	{
+		/*
 		auto pointerType = mlir::LLVM::LLVMPointerType::get(rewriter.getI8Type());
 		auto i64Type = rewriter.getI64Type();
 		auto arrayType =
@@ -181,6 +182,8 @@ class EntityDeclarationRewriter
 				op->getContext(),
 				"globalVariableType",
 				::mlir::ArrayRef<mlir::Type>({ pointerType, i64Type, arrayType }));
+		*/
+		auto structTest = mlir::rlc::getStructType(op, rewriter);
 
 		auto newOp = rewriter.create<mlir::LLVM::GlobalOp>(
 				op->getLoc(),
