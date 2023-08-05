@@ -183,7 +183,7 @@ class EntityDeclarationRewriter
 				"globalVariableType",
 				::mlir::ArrayRef<mlir::Type>({ pointerType, i64Type, arrayType }));
 		*/
-		auto structTest = mlir::rlc::getStructType(op, rewriter);
+		auto structTest = mlir::rlc::getStructType(op->getContext(), op.getMemberTypes().size(), rewriter.getI8Type(), rewriter.getI64Type());
 
 		auto newOp = rewriter.create<mlir::LLVM::GlobalOp>(
 				op->getLoc(),
