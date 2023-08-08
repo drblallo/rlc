@@ -183,7 +183,43 @@ class EntityDeclarationRewriter
 				"globalVariableType",
 				::mlir::ArrayRef<mlir::Type>({ pointerType, i64Type, arrayType }));
 		*/
-		auto structTest = mlir::rlc::getStructType(op->getContext(), op.getMemberTypes().size(), rewriter.getI8Type(), rewriter.getI64Type());
+		auto structTest = mlir::rlc::getStructType(op->getContext());
+
+		auto array = rewriter.create<mlir::LLVM::GlobalOp>(
+				op->getLoc(),
+				mlir::LLVM::LLVMArrayType::get(op->getContext(), mlir::LLVM::LLVMPointerType::get(mlir::IntegerType::get(op->getContext(), 8)), op.getMemberTypes().size()),
+				true,
+				mlir::LLVM::Linkage::LinkonceODR,
+				op.getType().cast<mlir::rlc::EntityType>().mangledName() + "_fieldNames",
+				mlir::Attribute());
+
+		auto* arrayBlock = rewriter.createBlock(&array.getInitializer());
+		rewriter.setInsertionPoint(arrayBlock, arrayBlock->begin());
+		
+		mlir::Value arrayValues = rewriter.create<mlir::LLVM::UndefOp>(op->getLoc(), mlir::LLVM::LLVMArrayType::get(op->getContext(), mlir::LLVM::LLVMPointerType::get(mlir::IntegerType::get(op->getContext(), 8)), op.getMemberTypes().size()));
+
+		for (unsigned i = 0, e = op.getMemberNames().size(); i < e; ++i)
+		{
+			auto variableName = getOrCreateGlobalString(
+					op.getLoc(),
+					rewriter,
+					op.getMemberNames()[i].cast<mlir::StringAttr>(),
+					op.getMemberNames()[i].cast<mlir::StringAttr>(),
+					op->getParentOfType<mlir::ModuleOp>());
+
+			mlir::Value constant = rewriter.create<mlir::LLVM::ConstantOp>(
+			op->getLoc(), rewriter.getI64Type(), rewriter.getIndexAttr(i));
+			arrayValues = rewriter.create<mlir::LLVM::InsertValueOp>(
+					op.getLoc(),
+					arrayValues,
+					variableName,
+					mlir::ArrayRef<int64_t>({ i }));
+		}
+
+		rewriter.create<mlir::LLVM::ReturnOp>(
+				op->getLoc(), mlir::ValueRange({ arrayValues }));
+
+		rewriter.setInsertionPoint(array);
 
 		auto newOp = rewriter.create<mlir::LLVM::GlobalOp>(
 				op->getLoc(),
@@ -217,23 +253,19 @@ class EntityDeclarationRewriter
 				numberOfFieldsValue,
 				mlir::ArrayRef<int64_t>({ 1 }));
 
-		for (unsigned i = 0, e = op.getMemberNames().size(); i < e; ++i)
-		{
-			auto variableName = getOrCreateGlobalString(
-					op.getLoc(),
-					rewriter,
-					op.getMemberNames()[i].cast<mlir::StringAttr>(),
-					op.getMemberNames()[i].cast<mlir::StringAttr>(),
-					newOp->getParentOfType<mlir::ModuleOp>());
-			structValue = rewriter.create<mlir::LLVM::InsertValueOp>(
-					op.getLoc(),
-					structValue,
-					variableName,
-					mlir::ArrayRef<int64_t>({ 2, i }));
-		}
+
+		auto address = rewriter.create<mlir::LLVM::AddressOfOp>(op->getLoc(), array);
+
+		structValue = rewriter.create<mlir::LLVM::InsertValueOp>(
+				op.getLoc(),
+				structValue,
+				rewriter.create<mlir::LLVM::BitcastOp>(op->getLoc(), structTest.getBody()[2], address),
+				mlir::ArrayRef<int64_t>({ 2 }));
 
 		rewriter.create<mlir::LLVM::ReturnOp>(
 				op->getLoc(), mlir::ValueRange({ structValue }));
+		
+
 		rewriter.eraseOp(op);
 
 		return mlir::success();

@@ -22,69 +22,36 @@ namespace mlir::rlc
 			mlir::OpBuilder builder(getOperation());
 			builder.setInsertionPoint(&getOperation().getBodyRegion().front(), getOperation().getBodyRegion().front().begin());
 
+			auto structTest = mlir::rlc::getStructType(&getContext());
+			
 			auto op = builder.create<mlir::LLVM::LLVMFuncOp>(
 					getOperation().getLoc(),
 					"getTypeName",
-					mlir::LLVM::LLVMFunctionType::get(mlir::LLVM::LLVMPointerType::get(&getContext()), {mlir::LLVM::LLVMPointerType::get(&getContext())}));
+					mlir::LLVM::LLVMFunctionType::get(structTest.getBody()[0], {mlir::LLVM::LLVMPointerType::get(structTest)}));
 			
 			auto* block = op.addEntryBlock();
 			builder.setInsertionPoint(block, block->begin());
 
-			//auto name = builder.create<mlir::LLVM::UndefOp>(getOperation()->getLoc(), mlir::LLVM::LLVMPointerType::get(&getContext()), &getOperation().getName());
-			//auto name = builder.create<mlir::LLVM::ConstantOp>(getOperation()->getLoc(), mlir::LLVM::LLVMPointerType::get(&getContext()), getOperation().getBodyRegion().getArgumentTypes().front());
-			//auto voidPointer = builder.create<mlir::LLVM::UndefOp>(getOperation()->getLoc(), getOperation().getBodyRegion().getArgumentTypes().front());
-			auto structTest = mlir::rlc::getStructType(&getContext(), getOperation().getBodyRegion().getArguments().size(), builder.getI8Type(), builder.getI64Type());
 			
-			auto* newBlock = builder.createBlock(&getOperation().getBodyRegion(), {}, getOperation().getBodyRegion().getArgumentTypes(), getOperation()->getLoc());
-			builder.setInsertionPoint(newBlock, newBlock->begin());
+			
+			//auto* newBlock = builder.createBlock(op->getParentRegion(), op->getParentRegion()->begin(), mlir::LLVM::LLVMPointerType::get(&getContext()), op->getLoc());
+			//builder.setInsertionPoint(block, block->begin());
 			//auto voidPointer = builder.create<mlir::LLVM::UndefOp>(getOperation()->getLoc(), mlir::LLVM::LLVMPointerType::get(&getContext()));
-			//mlir::ArrayRef<mlir::Value> test = structTest.getBody()[0];
-			/*
-			auto gep = builder.create<mlir::LLVM::GEPOp>(
-				getOperation()->getLoc(),
-				mlir::LLVM::LLVMPointerType::get(&getContext()),
-				structTest.getBody().begin(),
-				mlir::ValueRange({ getOperation().getBodyRegion().getArguments() }));
-			*/
-			//mlir::Value globalPtr = builder.create<mlir::LLVM::AddressOfOp>(getOperation()->getLoc(), structTest);
-
-			/*
-			if(!getOperation().getBody(0)->empty()&& !getOperation().getBody(0)->getArguments().empty()){
-				mlir::Value structValue = builder.create<mlir::LLVM::UndefOp>(getOperation().getLoc(), structTest);
-				auto pointer = builder.create<mlir::LLVM::GEPOp>(
-					getOperation()->getLoc(),
-					mlir::LLVM::LLVMPointerType::get(&getContext()),
-					structValue,
-					mlir::ValueRange({ getOperation().getBody(0)->getArguments()[0] }));
-
-					builder.create<mlir::LLVM::ReturnOp>(
-					getOperation().getLoc(), mlir::ValueRange({ pointer }));
-			} else {
-				auto pointer = builder.create<mlir::LLVM::UndefOp>(getOperation()->getLoc(), mlir::LLVM::LLVMPointerType::get(&getContext()));
-				builder.create<mlir::LLVM::ReturnOp>(
-					getOperation().getLoc(), mlir::ValueRange({ pointer }));			
-			}
-			*/
-
 			
-			mlir::Value structValue = builder.create<mlir::LLVM::UndefOp>(getOperation().getLoc(), structTest);
+
+			//mlir::Value structValue = builder.create<mlir::LLVM::UndefOp>(op->getLoc(), structTest);
+			mlir::Value cst0 = builder.create<mlir::LLVM::ConstantOp>(
+			op->getLoc(), builder.getI64Type(), builder.getIndexAttr(0));
 			auto pointer = builder.create<mlir::LLVM::GEPOp>(
-				getOperation()->getLoc(),
-				mlir::LLVM::LLVMPointerType::get(&getContext()),
-				structValue,
-				mlir::ValueRange({ getOperation().getBodyRegion().getArgument(0) }));
-			
+				op->getLoc(),
+				mlir::LLVM::LLVMPointerType::get(structTest.getBody()[0]),
+				block->getArgument(0),
+				mlir::ArrayRef<mlir::Value>({ cst0, cst0 }));
 
-			//auto pointer = builder.create<mlir::LLVM::UndefOp>(getOperation()->getLoc(), mlir::LLVM::LLVMPointerType::get(&getContext()), mlir::ValueRange({test}));
-			//auto valueRange = mlir::ValueRange({structTest.getBody().begin()->cast<mlir::Value>()});
-			//auto voidPointer = builder.create<mlir::LLVM::ConstantOp>(getOperation()->getLoc(), mlir::LLVM::LLVMPointerType::get(&getContext()), structTest.getName());
-			//auto test = "__globalVariableName" + getOperation().getBodyRegion().getArgumentTypes().front().cast<mlir::rlc::EntityType>().mangledName();
-			//builder.create<mlir::LLVM::ReturnOp>(
-					//getOperation().getLoc(), mlir::ValueRange({ name }));
-			
+			auto loaded = builder.create<mlir::LLVM::LoadOp>(op->getLoc(), pointer);
 			
 			builder.create<mlir::LLVM::ReturnOp>(
-					getOperation().getLoc(), mlir::ValueRange({ pointer }));
+					op->getLoc(), mlir::ValueRange({ loaded }));
 			
 
 

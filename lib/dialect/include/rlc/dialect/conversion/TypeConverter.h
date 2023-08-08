@@ -126,15 +126,15 @@ namespace mlir::rlc
 		converter.addConversion(voidToVoid);
 	}
 
-	inline mlir::LLVM::LLVMStructType getStructType(MLIRContext* context, size_t numElements, mlir::IntegerType int8Type, mlir::IntegerType int64Type){
-		auto pointerType = mlir::LLVM::LLVMPointerType::get(int8Type);
-		auto i64Type = int64Type;
-		auto arrayType =
-				mlir::LLVM::LLVMArrayType::get(pointerType, numElements);
+	inline mlir::LLVM::LLVMStructType getStructType(MLIRContext* context){
+		auto pointerType = mlir::LLVM::LLVMPointerType::get(mlir::IntegerType::get(context, 8));
+		auto i64Type = mlir::IntegerType::get(context, 64);
+		auto pointerToArrayType =
+				mlir::LLVM::LLVMPointerType::get(pointerType);
 		auto structTest = ::mlir::LLVM::LLVMStructType::getNewIdentified(
 				context,
 				"globalVariableType",
-				::mlir::ArrayRef<mlir::Type>({ pointerType, i64Type, arrayType }));
+				::mlir::ArrayRef<mlir::Type>({ pointerType, i64Type, pointerToArrayType }));
 
 		return structTest;
 	}
