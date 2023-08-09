@@ -146,7 +146,7 @@ static mlir::Value getOrCreateGlobalString(
 				/*isConstant=*/true,
 				mlir::LLVM::Linkage::Internal,
 				name,
-				builder.getStringAttr(value),
+				builder.getStringAttr(value + "\0"),
 				/*alignment=*/0);
 	}
 
