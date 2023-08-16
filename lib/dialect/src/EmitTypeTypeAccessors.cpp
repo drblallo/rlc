@@ -14,15 +14,10 @@ namespace mlir::rlc
 		{
 			registry.insert<mlir::rlc::RLCDialect, mlir::cf::ControlFlowDialect>();
 		}
-
-		void runOnOperation() override
-		{
+		
+		void emitGetTypeName(mlir::OpBuilder builder, mlir::LLVM::LLVMStructType structTest){
 			auto mangeledGetTypeNameName = "getTypeName";
-
-			mlir::OpBuilder builder(getOperation());
 			builder.setInsertionPoint(&getOperation().getBodyRegion().front(), getOperation().getBodyRegion().front().begin());
-
-			auto structTest = mlir::rlc::getStructType(&getContext());
 			
 			auto op = builder.create<mlir::LLVM::LLVMFuncOp>(
 					getOperation().getLoc(),
@@ -32,7 +27,6 @@ namespace mlir::rlc
 			auto* block = op.addEntryBlock();
 			builder.setInsertionPoint(block, block->begin());
 
-			
 			mlir::Value cst0 = builder.create<mlir::LLVM::ConstantOp>(
 			op->getLoc(), builder.getI64Type(), builder.getIndexAttr(0));
 			auto pointer = builder.create<mlir::LLVM::GEPOp>(
@@ -45,9 +39,9 @@ namespace mlir::rlc
 			
 			builder.create<mlir::LLVM::ReturnOp>(
 					op->getLoc(), mlir::ValueRange({ loaded }));
-			
+		}
 
-
+		void emitGetTypeFieldsCount(mlir::OpBuilder builder, mlir::LLVM::LLVMStructType structTest){
 			builder.setInsertionPoint(&getOperation().getBodyRegion().front(), getOperation().getBodyRegion().front().begin());
 			auto mangeledGetTypeFieldsCountName = "getTypeFieldsCount";
 
@@ -64,20 +58,20 @@ namespace mlir::rlc
 			opTypeFieldsCount->getLoc(), builder.getI64Type(), builder.getIndexAttr(0));
 			mlir::Value cst1 = builder.create<mlir::LLVM::ConstantOp>(
 			opTypeFieldsCount->getLoc(), builder.getI64Type(), builder.getIndexAttr(1));
+
 			auto pointerToInteger = builder.create<mlir::LLVM::GEPOp>(
 				opTypeFieldsCount->getLoc(),
 				mlir::LLVM::LLVMPointerType::get(structTest.getBody()[1]),
 				blockTypeFieldsCount->getArgument(0),
 				mlir::ArrayRef<mlir::Value>({ cst0ForCounter, cst1 }));
 
-			auto loadedInteger = builder.create<mlir::LLVM::LoadOp>(op->getLoc(), pointerToInteger);
+			auto loadedInteger = builder.create<mlir::LLVM::LoadOp>(opTypeFieldsCount->getLoc(), pointerToInteger);
 			
 			builder.create<mlir::LLVM::ReturnOp>(
 					opTypeFieldsCount->getLoc(), mlir::ValueRange({ loadedInteger }));
-			
-			
+		}
 
-
+		void emitGetTypeFieldName(mlir::OpBuilder builder, mlir::LLVM::LLVMStructType structTest){
 			builder.setInsertionPoint(&getOperation().getBodyRegion().front(), getOperation().getBodyRegion().front().begin());
 			auto mangeledGetTypeFieldNameName = "getTypeFieldName";
 
@@ -100,7 +94,6 @@ namespace mlir::rlc
 				blockTypeFieldName->getArgument(0),
 				mlir::ArrayRef<mlir::Value>({ cst0ForName, cst2 }));
 			
-
 			auto loadedArray = builder.create<mlir::LLVM::LoadOp>(opTypeFieldName->getLoc(), pointerToArray);
 
 			auto pointerToArrayField = builder.create<mlir::LLVM::GEPOp>(
@@ -113,8 +106,18 @@ namespace mlir::rlc
 			
 			builder.create<mlir::LLVM::ReturnOp>(
 					opTypeFieldName->getLoc(), mlir::ValueRange({ loadedPointer }));
+		}
+
+		void runOnOperation() override
+		{
+			mlir::OpBuilder builder(getOperation());
+			auto structTest = mlir::rlc::getStructType(&getContext());
+
+			emitGetTypeName(builder, structTest);
 			
+			emitGetTypeFieldsCount(builder, structTest);
 			
+			emitGetTypeFieldName(builder, structTest);
 		}
 
 		private:
