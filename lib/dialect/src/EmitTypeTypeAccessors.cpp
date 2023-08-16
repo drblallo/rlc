@@ -33,13 +33,6 @@ namespace mlir::rlc
 			builder.setInsertionPoint(block, block->begin());
 
 			
-			
-			//auto* newBlock = builder.createBlock(op->getParentRegion(), op->getParentRegion()->begin(), mlir::LLVM::LLVMPointerType::get(&getContext()), op->getLoc());
-			//builder.setInsertionPoint(block, block->begin());
-			//auto voidPointer = builder.create<mlir::LLVM::UndefOp>(getOperation()->getLoc(), mlir::LLVM::LLVMPointerType::get(&getContext()));
-			
-
-			//mlir::Value structValue = builder.create<mlir::LLVM::UndefOp>(op->getLoc(), structTest);
 			mlir::Value cst0 = builder.create<mlir::LLVM::ConstantOp>(
 			op->getLoc(), builder.getI64Type(), builder.getIndexAttr(0));
 			auto pointer = builder.create<mlir::LLVM::GEPOp>(
@@ -62,42 +55,66 @@ namespace mlir::rlc
 			auto opTypeFieldsCount = builder.create<mlir::LLVM::LLVMFuncOp>(
 					getOperation().getLoc(),
 					"getTypeFieldsCount",
-					mlir::LLVM::LLVMFunctionType::get(returnTypeTypeFieldsCount, {mlir::LLVM::LLVMPointerType::get(&getContext())}));
-			/*
+					mlir::LLVM::LLVMFunctionType::get(returnTypeTypeFieldsCount, {mlir::LLVM::LLVMPointerType::get(structTest)}));
+			
 			auto* blockTypeFieldsCount = opTypeFieldsCount.addEntryBlock();
-			builderTypeFieldsCount.setInsertionPoint(blockTypeFieldsCount, blockTypeFieldsCount->begin());
+			builder.setInsertionPoint(blockTypeFieldsCount, blockTypeFieldsCount->begin());
+			
+			mlir::Value cst0ForCounter = builder.create<mlir::LLVM::ConstantOp>(
+			opTypeFieldsCount->getLoc(), builder.getI64Type(), builder.getIndexAttr(0));
+			mlir::Value cst1 = builder.create<mlir::LLVM::ConstantOp>(
+			opTypeFieldsCount->getLoc(), builder.getI64Type(), builder.getIndexAttr(1));
+			auto pointerToInteger = builder.create<mlir::LLVM::GEPOp>(
+				opTypeFieldsCount->getLoc(),
+				mlir::LLVM::LLVMPointerType::get(structTest.getBody()[1]),
+				blockTypeFieldsCount->getArgument(0),
+				mlir::ArrayRef<mlir::Value>({ cst0ForCounter, cst1 }));
 
-			auto callTypeFieldsCount = builderTypeFieldsCount.create<mlir::LLVM::CallOp>(
-					realGetTypeFieldsCount.getLoc(), realGetTypeFieldsCount, mlir::ValueRange());
-
-			auto resTypeFieldsCount = *callTypeFieldsCount.getResults().begin();
-			auto trunchatedTypeFieldsCount = builderTypeFieldsCount.create<mlir::LLVM::TruncOp>(
-					realGetTypeFieldsCount.getLoc(), returnTypeTypeFieldsCount, resTypeFieldsCount);
-			builderTypeFieldsCount.create<mlir::LLVM::ReturnOp>(
-					realGetTypeFieldsCount.getLoc(), mlir::ValueRange({ trunchatedTypeFieldsCount }));
-			*/
+			auto loadedInteger = builder.create<mlir::LLVM::LoadOp>(op->getLoc(), pointerToInteger);
+			
+			builder.create<mlir::LLVM::ReturnOp>(
+					opTypeFieldsCount->getLoc(), mlir::ValueRange({ loadedInteger }));
+			
+			
 
 
-			//builder.setInsertionPoint(&getOperation().getBodyRegion().front(), getOperation().getBodyRegion().front().begin());
+			builder.setInsertionPoint(&getOperation().getBodyRegion().front(), getOperation().getBodyRegion().front().begin());
 			auto mangeledGetTypeFieldNameName = "getTypeFieldName";
 
 			auto opTypeFieldName = builder.create<mlir::LLVM::LLVMFuncOp>(
 					getOperation().getLoc(),
 					"getTypeFieldName",
-					mlir::LLVM::LLVMFunctionType::get(mlir::LLVM::LLVMPointerType::get(&getContext()), {mlir::LLVM::LLVMPointerType::get(&getContext()), builder.getI64Type()}));
-			/*
+					mlir::LLVM::LLVMFunctionType::get(mlir::LLVM::LLVMPointerType::get(builder.getI8Type()), {mlir::LLVM::LLVMPointerType::get(structTest), builder.getI64Type()}));
+			
 			auto* blockTypeFieldName = opTypeFieldName.addEntryBlock();
-			builderTypeFieldName.setInsertionPoint(blockTypeFieldName, blockTypeFieldName->begin());
+			builder.setInsertionPoint(blockTypeFieldName, blockTypeFieldName->begin());
 
-			auto callTypeFieldName = builderTypeFieldName.create<mlir::LLVM::CallOp>(
-					realGetTypeFieldName.getLoc(), realGetTypeFieldName, mlir::ValueRange());
+			mlir::Value cst0ForName = builder.create<mlir::LLVM::ConstantOp>(
+			opTypeFieldName->getLoc(), builder.getI64Type(), builder.getIndexAttr(0));
+			mlir::Value cst2 = builder.create<mlir::LLVM::ConstantOp>(
+			opTypeFieldName->getLoc(), builder.getI64Type(), builder.getIndexAttr(2));
+			
+			auto pointerToArray = builder.create<mlir::LLVM::GEPOp>(
+				opTypeFieldName->getLoc(),
+				mlir::LLVM::LLVMPointerType::get(structTest.getBody()[2]),
+				blockTypeFieldName->getArgument(0),
+				mlir::ArrayRef<mlir::Value>({ cst0ForName, cst2 }));
+			
 
-			auto resTypeFieldName = *callTypeFieldName.getResults().begin();
-			auto trunchatedTypeFieldName = builderTypeFieldName.create<mlir::LLVM::TruncOp>(
-					realGetTypeFieldName.getLoc(), returnTypeTypeFieldName, resTypeFieldName);
-			builderTypeFieldName.create<mlir::LLVM::ReturnOp>(
-					realGetTypeFieldName.getLoc(), mlir::ValueRange({ trunchatedTypeFieldName }));
-			*/
+			auto loadedArray = builder.create<mlir::LLVM::LoadOp>(opTypeFieldName->getLoc(), pointerToArray);
+
+			auto pointerToArrayField = builder.create<mlir::LLVM::GEPOp>(
+				opTypeFieldName->getLoc(),
+				mlir::LLVM::LLVMPointerType::get(structTest.getBody()[2].cast<mlir::LLVM::LLVMPointerType>().getElementType()),
+				loadedArray,
+				mlir::ArrayRef<mlir::Value>({ blockTypeFieldName->getArgument(1) }));
+
+			auto loadedPointer = builder.create<mlir::LLVM::LoadOp>(opTypeFieldName->getLoc(), pointerToArrayField);
+			
+			builder.create<mlir::LLVM::ReturnOp>(
+					opTypeFieldName->getLoc(), mlir::ValueRange({ loadedPointer }));
+			
+			
 		}
 
 		private:

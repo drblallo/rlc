@@ -139,14 +139,21 @@ static mlir::Value getOrCreateGlobalString(
 		mlir::OpBuilder::InsertionGuard insertGuard(builder);
 		builder.setInsertionPointToStart(module.getBody());
 		auto type = mlir::LLVM::LLVMArrayType::get(
-				mlir::IntegerType::get(builder.getContext(), 8), value.size());
+				mlir::IntegerType::get(builder.getContext(), 8), value.size()+1);
+
+		mlir::SmallVector<char, 4> charVector;
+		for(char x : value){
+			charVector.push_back(x);
+		}
+		charVector.push_back(0);
+
 		global = builder.create<mlir::LLVM::GlobalOp>(
 				loc,
 				type,
 				/*isConstant=*/true,
 				mlir::LLVM::Linkage::Internal,
 				name,
-				builder.getStringAttr(value + "\0"),
+				mlir::StringAttr::get(builder.getContext(), charVector),
 				/*alignment=*/0);
 	}
 
@@ -173,16 +180,6 @@ class EntityDeclarationRewriter
 			OpAdaptor adaptor,
 			mlir::ConversionPatternRewriter& rewriter) const final
 	{
-		/*
-		auto pointerType = mlir::LLVM::LLVMPointerType::get(rewriter.getI8Type());
-		auto i64Type = rewriter.getI64Type();
-		auto arrayType =
-				mlir::LLVM::LLVMArrayType::get(pointerType, op.getMemberTypes().size());
-		auto structTest = ::mlir::LLVM::LLVMStructType::getNewIdentified(
-				op->getContext(),
-				"globalVariableType",
-				::mlir::ArrayRef<mlir::Type>({ pointerType, i64Type, arrayType }));
-		*/
 		auto structTest = mlir::rlc::getStructType(op->getContext());
 
 		auto array = rewriter.create<mlir::LLVM::GlobalOp>(
