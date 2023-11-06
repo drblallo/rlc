@@ -178,6 +178,16 @@ namespace mlir::rlc
 			auto subF = rewriter.create<mlir::rlc::FunctionOp>(
 					action.getLoc(), subAct.getName(), type, subAct.getDeclaredNames());
 			subF.getPrecondition().takeBody(subAct.getPrecondition());
+			addFrameArgumentToPrecondition(action, type, subF, builder);
+
+			// add the precondition "actionEntity.resumptionPoint == thisSubaction.resumptionIndex" to the subAction.
+			auto &yield = subF.getPrecondition().getBlocks().front().back();
+			rewriter.setInsertionPoint(&yield);
+			auto savedResumptionIndex = rewriter.create<MemberAccess>(
+				subAct.getLoc(), subF.getPrecondition().getBlocks().front().getArgument(0), 0);
+			auto expectedResumptionIndex = rewriter.create<Constant>(subAct.getLoc(), (int64_t)subAct.getResumptionPoint());
+			auto eq = rewriter.create<EqualOp>(subAct->getLoc(), savedResumptionIndex, expectedResumptionIndex); 
+			yield.insertOperands(yield.getNumOperands(), ValueRange({eq.getResult()}));
 
 			action.getActions()[subAction.index()].replaceAllUsesWith(subF);
 
@@ -187,8 +197,6 @@ namespace mlir::rlc
 
 			rewriter.createBlock(
 					&subF.getBody(), subF.getBody().begin(), type.getInputs(), locs);
-
-			addFrameArgumentToPrecondition(action, type, subF, builder);
 
 			for (auto arg : llvm::enumerate(subAct.getDeclaredNames()))
 			{
