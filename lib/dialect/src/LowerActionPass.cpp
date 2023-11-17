@@ -1,5 +1,6 @@
 #include "llvm/ADT/TypeSwitch.h"
 #include "mlir/IR/BuiltinDialect.h"
+#include "mlir/IR/PatternMatch.h"
 #include "rlc/dialect/Operations.hpp"
 #include "rlc/dialect/Passes.hpp"
 #include "rlc/dialect/conversion/TypeConverter.h"
@@ -109,6 +110,21 @@ namespace mlir::rlc
 		}
 	}
 
+	// add the precondition "actionEntity.resumptionPoint == actionStatement.resumptionIndex" to the subActionFunction.
+	static void addResumptionPointPrecondition(
+		mlir::rlc::FunctionOp subactionFunction,
+		mlir::rlc::ActionStatement actionStatement,
+		mlir::IRRewriter &rewriter
+	) {
+		auto &yield = subactionFunction.getPrecondition().getBlocks().front().back();
+		rewriter.setInsertionPoint(&yield);
+		auto savedResumptionIndex = rewriter.create<MemberAccess>(
+			actionStatement.getLoc(), subactionFunction.getPrecondition().getBlocks().front().getArgument(0), 0);
+		auto expectedResumptionIndex = rewriter.create<Constant>(actionStatement.getLoc(), (int64_t)actionStatement.getResumptionPoint());
+		auto eq = rewriter.create<EqualOp>(actionStatement->getLoc(), savedResumptionIndex, expectedResumptionIndex); 
+		yield.insertOperands(yield.getNumOperands(), ValueRange({eq.getResult()}));
+	}
+
 	static void emitActionWrapperCalls(
 			mlir::rlc::ActionFunction action, mlir::rlc::ModuleBuilder& builder)
 	{
@@ -180,14 +196,7 @@ namespace mlir::rlc
 			subF.getPrecondition().takeBody(subAct.getPrecondition());
 			addFrameArgumentToPrecondition(action, type, subF, builder);
 
-			// add the precondition "actionEntity.resumptionPoint == thisSubaction.resumptionIndex" to the subAction.
-			auto &yield = subF.getPrecondition().getBlocks().front().back();
-			rewriter.setInsertionPoint(&yield);
-			auto savedResumptionIndex = rewriter.create<MemberAccess>(
-				subAct.getLoc(), subF.getPrecondition().getBlocks().front().getArgument(0), 0);
-			auto expectedResumptionIndex = rewriter.create<Constant>(subAct.getLoc(), (int64_t)subAct.getResumptionPoint());
-			auto eq = rewriter.create<EqualOp>(subAct->getLoc(), savedResumptionIndex, expectedResumptionIndex); 
-			yield.insertOperands(yield.getNumOperands(), ValueRange({eq.getResult()}));
+			addResumptionPointPrecondition(subF, subAct, rewriter);
 
 			action.getActions()[subAction.index()].replaceAllUsesWith(subF);
 
