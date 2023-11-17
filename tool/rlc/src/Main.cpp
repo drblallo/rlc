@@ -222,6 +222,13 @@ static cl::opt<bool> ExpectFail(
 
 int main(int argc, char *argv[]);
 
+static cl::opt<bool> emitFuzzer(
+	"fuzzer",
+	cl::desc("emit a fuzzer."), // TODO consider passing the action name here.
+	cl::init(false),
+	cl::cat(astDumperCategory)
+);
+
 static mlir::rlc::Driver::Request getRequest()
 {
 	using namespace mlir::rlc;

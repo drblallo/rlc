@@ -223,3 +223,12 @@ def LowerInitializerListsPass : Pass<"rlc-lower-initializer-lists", "mlir::Modul
   let summary = "lower initializer list either to global or to regular array";
   let dependentDialects = ["rlc::RLCDialect"];
 }
+
+def EmitSimulatorPass : Pass<"rlc-emit-simulator-pass", "mlir::ModuleOp"> {
+  let summary = "emit the RLC_simulate function to be used by the fuzzer.";
+  let dependentDialects = ["rlc::RLCDialect"];
+  let options = [
+    Option<"actionToSimulate", "Action to simulate", "std::string", /*default=*/"\"play\"",
+      "Name of the action to generate a simulator for">,
+  ];
+}
