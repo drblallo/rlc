@@ -23,3 +23,4 @@ rlcAddTool(rlc
 	${translation_libs}
 	${llvm_libs})
 
+target_include_directories(rlc PUBLIC ${CMAKE_CURRENT_BINARY_DIR}/../../lib/fuzzer/include)

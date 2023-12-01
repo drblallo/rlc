@@ -193,6 +193,8 @@ def RLCBackEndPass : Pass<"rlc-backend-pass", "mlir::ModuleOp"> {
            "dump ir and stop">,
     Option<"compileOnly", "compile and stop", "bool", /*default=*/"false",
            "compile and stop">,
+    Option<"rpaths", "rpath entries", "const std::vector<std::string>*", /*default=*/"nullptr",
+          "rpath entries">,
     Option<"targetInfo", "info about the target", "const mlir::rlc::TargetInfo*", /*default=*/"nullptr",
            "info about the target">,
   ];

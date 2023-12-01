@@ -14,6 +14,8 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 #include "rlc/backend/BackEnd.hpp"
+#include <string>
+#include <vector>
 
 #include "llvm/Analysis/TargetLibraryInfo.h"
 #include "llvm/CodeGen/CommandFlags.h"
@@ -244,7 +246,8 @@ static int linkLibraries(
 		llvm::StringRef clangPath,
 		llvm::StringRef outputFile,
 		bool shared,
-		const std::vector<std::string> &extraObjectFiles)
+		const std::vector<std::string> &extraObjectFiles,
+		const std::vector<std::string> &rpaths)
 {
 	auto realPath = llvm::cantFail(
 			llvm::errorOrToExpected(llvm::sys::findProgramByName(clangPath)));
@@ -263,6 +266,8 @@ static int linkLibraries(
 	else
 	{
 		argSource.push_back("-no-pie");
+	for(auto rpathEntry :rpaths)
+		argSource.push_back("-Wl,-rpath=" + rpathEntry);
 	}
 	for (auto extraObject : extraObjectFiles)
 		argSource.push_back(extraObject);
@@ -333,7 +338,8 @@ namespace mlir::rlc
 							clangPath,
 							outputFile,
 							targetInfo->isShared(),
-							*extraObjectFiles) != 0)
+							*extraObjectFiles,
+							*rpaths) != 0)
 				signalPassFailure();
 		}
 	};

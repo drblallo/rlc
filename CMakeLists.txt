@@ -77,7 +77,6 @@ find_package(MLIR REQUIRED CONFIG)
 ##############################
 add_subdirectory(lib)
 add_subdirectory(tool)
-add_subdirectory(fuzzer)
 
 ##############################
 ###         Python         ###

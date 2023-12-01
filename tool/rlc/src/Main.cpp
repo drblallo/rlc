@@ -47,6 +47,7 @@ limitations under the License.
 #include "rlc/parser/MultiFileParser.hpp"
 #include "rlc/python/Interfaces.hpp"
 #include "rlc/python/Passes.hpp"
+#include "rlc/fuzzer/Fuzzer.hpp"
 
 #if NDEBUG
 static constexpr const bool isDebug = false;
@@ -228,6 +229,8 @@ static cl::opt<bool> emitFuzzer(
 	cl::init(false),
 	cl::cat(astDumperCategory)
 );
+
+cl::list<std::string> RPath("rpath", cl::desc("<rpath>"));
 
 static mlir::rlc::Driver::Request getRequest()
 {
