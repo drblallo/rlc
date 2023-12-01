@@ -11,6 +11,7 @@
 #include "mlir/IR/BuiltinTypes.h"
 #include "mlir/IR/Location.h"
 #include "mlir/IR/OperationSupport.h"
+#include "mlir/IR/PatternMatch.h"
 #include "mlir/IR/Region.h"
 #include "mlir/IR/Value.h"
 #include "mlir/IR/ValueRange.h"
@@ -19,28 +20,12 @@
 #include "rlc/dialect/Operations.hpp"
 #include "rlc/dialect/Types.hpp"
 
-/*
-    Declares the function RLC_Fuzzer_getInput(max: int64) -> int64
-    The implementation of this function should return a (random | fuzz) number between 0 and max exclusive.
-*/
-static mlir::rlc::FunctionOp emitGetInputDeclaration(
-    mlir::rlc::ActionFunction action
-) {
-    mlir::OpBuilder builder(action);
+static mlir::Value findFunction(mlir::ModuleOp module, llvm::StringRef functionName) {
+    for (auto op : module.getOps<mlir::rlc::FunctionOp>())
+        if(op.getUnmangledName().equals(functionName))
+            return op.getResult();
 
-    auto functionType = mlir::FunctionType::get(
-                action->getContext(),
-                {mlir::rlc::IntegerType::getInt64(action->getContext())},
-                {mlir::rlc::IntegerType::getInt64(action->getContext())}
-                );
-
-    auto getInput = builder.create<mlir::rlc::FunctionOp>(
-			action->getLoc(),
-            llvm::StringRef("RLC_Fuzzer_getInput"),
-			functionType,
-            builder.getStrArrayAttr({"max"})
-	);
-    return getInput;
+    assert(0 && "failed to find the function");
 }
 
 /*
@@ -100,9 +85,10 @@ static void emitLoopCondition(
 */
 static mlir::rlc::DeclarationStatement emitChosenActionDeclaration(
     mlir::rlc::ActionFunction action,
-    mlir::rlc::FunctionOp getInput,
     mlir::OpBuilder builder
 ) {
+    auto getInput = findFunction(action->getParentOfType<mlir::ModuleOp>(),"RLC_Fuzzer_getInput");
+
     auto ip = builder.saveInsertionPoint();
     auto chosenActionDeclaration = builder.create<mlir::rlc::DeclarationStatement>(
         action->getLoc(),
@@ -116,7 +102,7 @@ static mlir::rlc::DeclarationStatement emitChosenActionDeclaration(
         (int64_t) action.getSubActionsSize());
     auto call = builder.create<mlir::rlc::CallOp>(
         action->getLoc(),
-        getInput.getResult(),
+        getInput,
         mlir::ValueRange({numSubactions.getResult()})
     );
     builder.create<mlir::rlc::Yield>(action->getLoc(), call.getResult(0));
@@ -125,54 +111,12 @@ static mlir::rlc::DeclarationStatement emitChosenActionDeclaration(
 }
 
 /*
-    Declares the function RLC_Fuzzer_pickArgument(size:int64) -> int64
-    The implementation of this function should return pick an input value for an integer argument with the given size.
-    TODO pass other constraints to this function.
-*/
-static mlir::rlc::FunctionOp emitPickArgumentDeclaration(
-    mlir::rlc::ActionFunction action
-) {
-    mlir::OpBuilder builder(action);
-
-    auto functionType = mlir::FunctionType::get(
-                action->getContext(),
-                {mlir::rlc::IntegerType::getInt64(action->getContext())},
-                {mlir::rlc::IntegerType::getInt64(action->getContext())}
-                );
-
-    auto pickArgument = builder.create<mlir::rlc::FunctionOp>(
-			action->getLoc(),
-            llvm::StringRef("RLC_Fuzzer_pickArgument"),
-			functionType,
-            builder.getStrArrayAttr({"size"})
-	);
-    return pickArgument;
-}
-
-/*
-    Declares the function RLC_Fuzzer_print(message:int64) -> void
-*/
-static mlir::rlc::FunctionOp emitPrintDeclaration(
-    mlir::rlc::ActionFunction action
-) {
-    mlir::OpBuilder builder(action);
-
-    auto print = builder.create<mlir::rlc::FunctionOp>(
-			action->getLoc(),
-            llvm::StringRef("RLC_Fuzzer_print"),
-			mlir::FunctionType::get(action->getContext(), {mlir::rlc::IntegerType::get(action->getContext(), 64)}, {}),
-            builder.getStrArrayAttr({"message"})
-	);
-    return print;
-}
-
-/*
     Emits the declarations (and initializations) for each subaction argument.
 */
 static llvm::SmallVector<mlir::Value, 2> emitSubactionArgumentDeclarations(
     mlir::FunctionType subactionFunctionType,
-    mlir::rlc::FunctionOp pickArgument,
-    mlir::rlc::FunctionOp print,
+    mlir::Value pickArgument,
+    mlir::Value print,
     mlir::Location loc,
     mlir::OpBuilder builder
 ) {
@@ -198,11 +142,11 @@ static llvm::SmallVector<mlir::Value, 2> emitSubactionArgumentDeclarations(
             (int64_t) round(pow(2,input_type_size)));
         auto call = builder.create<mlir::rlc::CallOp>(
             loc,
-            pickArgument.getResult(),
+            pickArgument,
             mlir::ValueRange({size.getResult()})
         );
         // print the value picked for the argument for debugging purposes.
-        builder.create<mlir::rlc::CallOp>(loc, print.getResult(), call.getResult(0));
+        builder.create<mlir::rlc::CallOp>(loc, print, call.getResult(0));
         builder.create<mlir::rlc::Yield>(loc, call.getResult(0));
         builder.setInsertionPointAfter(argDecl);
         i++;
@@ -222,9 +166,8 @@ static llvm::SmallVector<mlir::Block*, 4> emitSubactionBlocks(
     mlir::OpBuilder builder
 ) {
     auto ip = builder.saveInsertionPoint();
-    auto pickArgument = emitPickArgumentDeclaration(action);
-    auto print = emitPrintDeclaration(action);
-
+    auto pickArgument = findFunction(action->getParentOfType<mlir::ModuleOp>(), "RLC_Fuzzer_pickArgument");
+    auto print = findFunction(action->getParentOfType<mlir::ModuleOp>(),"RLC_Fuzzer_print");
     llvm::SmallVector<mlir::Block*, 4> result;
     for(auto subaction : action.getActions()) {
         auto functionType = llvm::dyn_cast<mlir::FunctionType>(subaction.getType());
@@ -248,7 +191,6 @@ static llvm::SmallVector<mlir::Block*, 4> emitSubactionBlocks(
         random/fuzz inputs.
 */
 static void emitSimulator(mlir::rlc::ActionFunction action) {
-    auto getInput = emitGetInputDeclaration(action);
     auto loc = action.getLoc();
 
     mlir::OpBuilder builder(action);
@@ -266,7 +208,7 @@ static void emitSimulator(mlir::rlc::ActionFunction action) {
     auto whileStmt = builder.create<mlir::rlc::WhileStatement>(loc);
     emitLoopCondition(action, &whileStmt.getCondition(), entityDeclaration.getResult(), builder);
     builder.createBlock(&whileStmt.getBody());
-    auto chosenActionDeclaration = emitChosenActionDeclaration(action, getInput, builder);
+    auto chosenActionDeclaration = emitChosenActionDeclaration(action, builder);
     auto blocks = emitSubactionBlocks(action, &whileStmt.getBody(), entityDeclaration.getResult(), builder);
     builder.create<mlir::rlc::SelectBranch>(loc, chosenActionDeclaration.getResult(), blocks);
    
@@ -290,13 +232,13 @@ namespace mlir::rlc
 		void runOnOperation() override
 		{   
 			ModuleOp module = getOperation();
+            mlir::IRRewriter rewriter(module->getContext());
 
             // invoke emit_simulator on the ActionFunction with the correct unmangledName
-			llvm::SmallVector<mlir::rlc::ActionFunction, 4> actionFunctionOps;
-			module.walk([&](mlir::rlc::ActionFunction op){
+            for(auto op :module.getOps<ActionFunction>()) {
                 if(op.getUnmangledName().str() == actionToSimulate)
 				    emitSimulator(op);
-			});
+			}
 		}
 	};
 

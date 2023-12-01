@@ -7,7 +7,7 @@ extern "C" void RLC_Fuzzer_simulate();
 
 /* --------------- These are is called by RLC_Fuzzer_simulate. -------------- */
 // It's a stand-in for the sophisticated stuff we'd like to do in C.
-extern "C" void RLC_Fuzzer_printint64_t_(const __int64_t *message) {
+extern "C" void RLC_Fuzzer_printvoid_int64_t_(const __int64_t *message) {
     printf("Message: %ld \n", *message);
 }
 

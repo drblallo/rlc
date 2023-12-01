@@ -1,3 +1,5 @@
+import fuzzer.cpp_functions
+
 act play():
 	let current = 0
 	while current != 7:
