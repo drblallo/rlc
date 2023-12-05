@@ -29,7 +29,7 @@ static mlir::Value findFunction(mlir::ModuleOp module, llvm::StringRef functionN
 }
 
 /*
-    Emits let actionEntity = action()
+    let actionEntity = action()
     TODO handle action function arguments.
 */
 static mlir::rlc::DeclarationStatement emitActionEntityDeclaration(
@@ -56,8 +56,7 @@ static mlir::rlc::DeclarationStatement emitActionEntityDeclaration(
 }
 
 /*
-    Emits the condition of the main while loop.
-        not is_done_action(actionEntity)
+    not is_done_action(actionEntity)
     TODO add a condition to check input length here.
 */
 static void emitLoopCondition(
@@ -80,7 +79,7 @@ static void emitLoopCondition(
 }
 
 /*
-    Emits let chosenAction = getInput(number_of_subactions).
+    let chosenAction = getInput(number_of_subactions)
     TODO this should call getInput(number_of_available_subactions)
 */
 static mlir::rlc::DeclarationStatement emitChosenActionDeclaration(
@@ -111,7 +110,11 @@ static mlir::rlc::DeclarationStatement emitChosenActionDeclaration(
 }
 
 /*
-    Emits the declarations (and initializations) for each subaction argument.
+    let arg1 = pickArgument(arg_1_size)
+    let arg2 = pickArgument(arg_2_size)
+    ...
+
+    where arg1,arg2,... are the arguments of the subaction.
 */
 static llvm::SmallVector<mlir::Value, 2> emitSubactionArgumentDeclarations(
     mlir::FunctionType subactionFunctionType,
@@ -139,7 +142,7 @@ static llvm::SmallVector<mlir::Value, 2> emitSubactionArgumentDeclarations(
         int64_t input_type_size = llvm::dyn_cast<mlir::rlc::IntegerType>(inputType).getSize();
         auto size = builder.create<mlir::rlc::Constant>(
             loc,
-            (int64_t) round(pow(2,input_type_size)));
+            input_type_size);
         auto call = builder.create<mlir::rlc::CallOp>(
             loc,
             pickArgument,
@@ -157,7 +160,14 @@ static llvm::SmallVector<mlir::Value, 2> emitSubactionArgumentDeclarations(
 
 
 /*
-    Emits the "case" block for each subaction. These blocks pick arguments for the subaction and invoke it.
+    For each subaction, emits the block:
+    {
+        let arg1 = pickArgument(arg_1_size)
+        let arg2 = pickArgument(arg_2_size)
+        ...
+
+        subaction_function(actionEntity, arg1, arg2, ...)
+    }
 */
 static llvm::SmallVector<mlir::Block*, 4> emitSubactionBlocks(
     mlir::rlc::ActionFunction action,
@@ -187,8 +197,20 @@ static llvm::SmallVector<mlir::Block*, 4> emitSubactionBlocks(
 }
 
 /*
-    Emit a function that simulates the subaction by repeatedly invoking its subactions with
-        random/fuzz inputs.
+    fun RLC_Fuzzer_simulate():
+        let actionEntity = action()
+        while not is_done_action(actionEntity):
+            let chosenAction = getInput(number_of_subactions)
+            switch chosenAction:
+                case subaction1:
+                    let arg1 = pickArgument(arg_1_size)
+                    let arg2 = pickArgument(arg_2_size)
+                    ...
+
+                    subaction_function(actionEntity, arg1, arg2, ...)
+                case subaction2:
+                    ...
+                ...
 */
 static void emitSimulator(mlir::rlc::ActionFunction action) {
     auto loc = action.getLoc();
