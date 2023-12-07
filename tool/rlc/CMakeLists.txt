@@ -23,4 +23,6 @@ rlcAddTool(rlc
 	${translation_libs}
 	${llvm_libs})
 
-target_include_directories(rlc PUBLIC ${CMAKE_CURRENT_BINARY_DIR}/../../lib/fuzzer/include)
+cmake_policy(SET CMP0070 NEW)
+file(GENERATE OUTPUT include/Fuzzer.hpp INPUT src/Fuzzer.hpp.in)
+target_include_directories(rlc PUBLIC ${CMAKE_CURRENT_BINARY_DIR}/include)
