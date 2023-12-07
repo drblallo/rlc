@@ -26,6 +26,7 @@ static mlir::Value findFunction(mlir::ModuleOp module, llvm::StringRef functionN
             return op.getResult();
 
     assert(0 && "failed to find the function");
+    return nullptr;
 }
 
 /*
