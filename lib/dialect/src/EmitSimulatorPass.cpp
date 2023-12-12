@@ -80,30 +80,95 @@ static void emitLoopCondition(
 }
 
 /*
-    let chosenAction = getInput(number_of_subactions)
-    TODO this should call getInput(number_of_available_subactions)
+    Emits:
+
+        let availableSubactions = Vector<Int>
+        if(subAction0.resumptionIndex == actionEntity.resumptionIndex)
+            availableSubactions.push(0)
+        if(subAction1.resumptionIndex == actionEntity.resumptionIndex)
+            availableSubactions.push(1)
+        ...
+        let index = getInput(availableSubactions.size)
+        let chosenAction = availableSubactions.get(index)
+
+    We use the helper functions init_available_subactions, add_available_subaction, pick_subaction
+        defined in fuzzer.utils to avoid dealing with templates here.
 */
 static mlir::rlc::DeclarationStatement emitChosenActionDeclaration(
     mlir::rlc::ActionFunction action,
+    mlir::Value actionEntity,
     mlir::OpBuilder builder
 ) {
-    auto getInput = findFunction(action->getParentOfType<mlir::ModuleOp>(),"RLC_Fuzzer_getInput");
-
     auto ip = builder.saveInsertionPoint();
+
+    auto initAvailableSubactions = findFunction(action->getParentOfType<mlir::ModuleOp>(), "init_available_subactions");
+    auto addAvailableSubaction = findFunction(action->getParentOfType<mlir::ModuleOp>(), "add_available_subaction");
+    auto pickSubaction = findFunction(action->getParentOfType<mlir::ModuleOp>(), "pick_subaction");
+
+    // let availableSubactions = Vector<Int>
+    auto intVectorType = mlir::rlc::EntityType::getIdentified(
+        builder.getContext(),
+        "Vector",
+        {mlir::rlc::IntegerType::getInt64(builder.getContext())}
+    );
+    auto availableSubactions = builder.create<mlir::rlc::DeclarationStatement>(
+        action.getLoc(),
+        intVectorType,
+        llvm::StringRef("availableSubactions")
+    );
+    builder.createBlock(&availableSubactions.getBody());  
+    auto initialized = builder.create<mlir::rlc::CallOp>(
+        action->getLoc(),
+        initAvailableSubactions,
+        mlir::ValueRange({})
+    );
+    builder.create<mlir::rlc::Yield>(action->getLoc(), initialized.getResult(0));
+    builder.setInsertionPointAfter(availableSubactions);
+
+    // for each subaction,
+    //      if(subAction.resumptionIndex == actionEntity.resumptionIndex)
+    //          availableSubactions.push(subactionID)
+    int64_t index = 0;
+    action.getBody().walk([&](mlir::rlc::ActionStatement subaction) {
+        auto ifStatement = builder.create<mlir::rlc::IfStatement>(action->getLoc());
+        builder.createBlock(&ifStatement.getCondition());
+        auto storedResumptionPoint = builder.create<mlir::rlc::MemberAccess>(
+            action->getLoc(),
+            actionEntity,
+            0
+        );
+        auto subactionResumptionPoint = builder.create<mlir::rlc::Constant>(action.getLoc(), (int64_t) subaction.getResumptionPoint());
+        auto eq = builder.create<mlir::rlc::EqualOp>(action->getLoc(), storedResumptionPoint, subactionResumptionPoint);
+        builder.create<mlir::rlc::Yield>(ifStatement.getLoc(), eq.getResult());
+
+        auto *trueBranch = builder.createBlock(&ifStatement.getTrueBranch());
+        auto subactionIndex = builder.create<mlir::rlc::Constant>(action->getLoc(), index);
+        builder.create<mlir::rlc::CallOp>(
+            action->getLoc(),
+            addAvailableSubaction,
+            mlir::ValueRange{availableSubactions.getResult(), subactionIndex.getResult()}
+        );
+        builder.create<mlir::rlc::Yield>(action->getLoc());
+
+        // construct the false branch that does nothing
+        auto *falseBranch = builder.createBlock(&ifStatement.getElseBranch());
+        builder.create<mlir::rlc::Yield>(ifStatement.getLoc());
+        
+        builder.setInsertionPointAfter(ifStatement);
+        index++;
+    });
+
+    // let chosenAction = pick_subaction(availableSubactions)
     auto chosenActionDeclaration = builder.create<mlir::rlc::DeclarationStatement>(
         action->getLoc(),
         mlir::rlc::IntegerType::getInt64(builder.getContext()),
         llvm::StringRef("chosenAction")
     );
-
     builder.createBlock(&chosenActionDeclaration.getBody());
-    auto numSubactions = builder.create<mlir::rlc::Constant>(
-        action->getLoc(),
-        (int64_t) action.getSubActionsSize());
     auto call = builder.create<mlir::rlc::CallOp>(
         action->getLoc(),
-        getInput,
-        mlir::ValueRange({numSubactions.getResult()})
+        pickSubaction,
+        mlir::ValueRange{availableSubactions.getResult()}
     );
     builder.create<mlir::rlc::Yield>(action->getLoc(), call.getResult(0));
     builder.restoreInsertionPoint(ip);
@@ -199,9 +264,16 @@ static llvm::SmallVector<mlir::Block*, 4> emitSubactionBlocks(
 
 /*
     fun RLC_Fuzzer_simulate():
-        let actionEntity = action()
         while not is_done_action(actionEntity):
-            let chosenAction = getInput(number_of_subactions)
+            let availableSubactions = Vector<Int>
+            if(subAction0.resumptionIndex == actionEntity.resumptionIndex)
+                availableSubactions.push(0)
+            if(subAction1.resumptionIndex == actionEntity.resumptionIndex)
+                availableSubactions.push(1)
+            ...
+
+            let index = getInput(availableSubactions.size)
+            let chosenAction = availableSubactions.get(index)
             switch chosenAction:
                 case subaction1:
                     let arg1 = pickArgument(arg_1_size)
@@ -231,7 +303,7 @@ static void emitSimulator(mlir::rlc::ActionFunction action) {
     auto whileStmt = builder.create<mlir::rlc::WhileStatement>(loc);
     emitLoopCondition(action, &whileStmt.getCondition(), entityDeclaration.getResult(), builder);
     builder.createBlock(&whileStmt.getBody());
-    auto chosenActionDeclaration = emitChosenActionDeclaration(action, builder);
+    auto chosenActionDeclaration = emitChosenActionDeclaration(action, entityDeclaration.getResult(), builder);
     auto blocks = emitSubactionBlocks(action, &whileStmt.getBody(), entityDeclaration.getResult(), builder);
     builder.create<mlir::rlc::SelectBranch>(loc, chosenActionDeclaration.getResult(), blocks);
    
