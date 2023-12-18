@@ -51,6 +51,7 @@ namespace rlc
 		KeywordType,
 		KeywordExtern,
 		KeywordImport,
+		KeywordCan,
 		Indent,
 		Deindent,
 		Newline,

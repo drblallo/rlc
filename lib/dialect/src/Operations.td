@@ -1682,3 +1682,18 @@ def RLC_AssertOp : RLC_Dialect<"assert"> {
 
   let assemblyFormat = "$assertion type($assertion) attr-dict";
 }
+
+def RLC_CanOp : RLC_Dialect <"can", [DeclareOpInterfaceMethods<TypeCheckable>]> {
+  let arguments = (ins AnyFunctionType:$callee, Variadic<AnyType>:$args);
+
+  let results = (outs RLC_BoolType:$result);
+
+  let assemblyFormat = [{
+        $callee `:` type($callee) `(` $args `)` attr-dict `:` functional-type($args, results)
+    }];
+
+  let builders = [
+        OpBuilder<(ins "mlir::Value":$callee, "mlir::ValueRange":$args), [{
+            build($_builder, $_state, BoolType::get(callee.getContext()), callee, args);
+    }]>];
+}

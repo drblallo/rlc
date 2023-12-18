@@ -3,6 +3,7 @@
 #include <system_error>
 
 #include "llvm/Support/Error.h"
+#include "rlc/dialect/Operations.hpp"
 #include "rlc/parser/Lexer.hpp"
 #include "rlc/utils/Error.hpp"
 
@@ -150,6 +151,19 @@ Expected<mlir::rlc::FreeOp> Parser::builtinFree()
 	return builder.create<mlir::rlc::FreeOp>(location, *toDelete);
 }
 
+Expected<mlir::rlc::CanOp> Parser::canExpression()
+{
+	EXPECT(Token::KeywordCan);
+	EXPECT(Token::Identifier);
+	auto funcName = lIdent;
+	auto ref = builder.create<mlir::rlc::UnresolvedReference>(
+					getCurrentSourcePos(), unkType(), funcName);
+	EXPECT(Token::LPar);
+	TRY(args, argumentExpressionList());
+	EXPECT(Token::RPar);
+	return builder.create<mlir::rlc::CanOp>(getCurrentSourcePos(), ref, *args);
+}
+
 /**
  * primaryExpression : Ident ("::" Ident)? | Double | int64 | "true" | "false" |
  * "(" expression ")"  | builtinMalloc | builtinFromArray | builtinToArray |
@@ -205,6 +219,11 @@ Expected<mlir::Value> Parser::primaryExpression()
 	if (current == Token::LSquare)
 	{
 		return initializerList();
+	}
+
+	if(current == Token::KeywordCan)
+	{
+		return canExpression();
 	}
 
 	return make_error<RlcError>(

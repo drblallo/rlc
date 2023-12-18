@@ -474,6 +474,12 @@ mlir::LogicalResult mlir::rlc::CallOp::typeCheck(
 	return mlir::success();
 }
 
+mlir::LogicalResult mlir::rlc::CanOp::typeCheck(
+		mlir::rlc::ModuleBuilder &builder)
+{
+	return mlir::success();
+}
+
 mlir::LogicalResult mlir::rlc::ForFieldStatement::typeCheck(
 		mlir::rlc::ModuleBuilder &builder)
 {

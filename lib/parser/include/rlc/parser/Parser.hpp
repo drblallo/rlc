@@ -40,6 +40,7 @@ namespace rlc
 		llvm::Expected<mlir::Value> builtinToArray();
 		llvm::Expected<mlir::rlc::FreeOp> builtinFree();
 		llvm::Expected<mlir::Operation*> builtinDestroy();
+		llvm::Expected<mlir::rlc::CanOp> canExpression();
 		llvm::Expected<mlir::Value> expression();
 		llvm::Expected<mlir::Value> unaryExpression();
 		llvm::Expected<mlir::rlc::EnumDeclarationOp> enumDeclaration();
