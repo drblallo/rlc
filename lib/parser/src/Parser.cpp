@@ -3,7 +3,9 @@
 #include <system_error>
 
 #include "llvm/Support/Error.h"
+#include "mlir/IR/BuiltinTypes.h"
 #include "rlc/dialect/Operations.hpp"
+#include "rlc/dialect/Types.hpp"
 #include "rlc/parser/Lexer.hpp"
 #include "rlc/utils/Error.hpp"
 
@@ -151,7 +153,7 @@ Expected<mlir::rlc::FreeOp> Parser::builtinFree()
 	return builder.create<mlir::rlc::FreeOp>(location, *toDelete);
 }
 
-Expected<mlir::rlc::CanOp> Parser::canExpression()
+Expected<mlir::Value> Parser::canExpression()
 {
 	EXPECT(Token::KeywordCan);
 	EXPECT(Token::Identifier);
@@ -161,7 +163,14 @@ Expected<mlir::rlc::CanOp> Parser::canExpression()
 	EXPECT(Token::LPar);
 	TRY(args, argumentExpressionList());
 	EXPECT(Token::RPar);
-	return builder.create<mlir::rlc::CanOp>(getCurrentSourcePos(), ref, *args);
+	auto can =  builder.create<mlir::rlc::CanOp>(
+		getCurrentSourcePos(),
+		// this is ugly but the parser part will be removed before the merge anyway.
+	 	mlir::FunctionType::get(builder.getContext(),{},{mlir::rlc::BoolType::get(builder.getContext())}),
+		ref
+	);
+	auto call = builder.create<mlir::rlc::CallOp>(getCurrentSourcePos(), can->getResult(0), *args);
+	return call->getResult(0);
 }
 
 /**

@@ -1,3 +1,5 @@
+#include "llvm/Support/Casting.h"
+#include "mlir/IR/Builders.h"
 #include "mlir/IR/BuiltinDialect.h"
 #include "mlir/IR/PatternMatch.h"
 #include "rlc/dialect/Operations.hpp"
@@ -40,34 +42,6 @@ static mlir::rlc::FunctionMetadataOp emitPreconditionFunction(mlir::rlc::Functio
 			fun.getLoc(), fun.getResult(), validityFunction.getResult());
 }
 
-static void lowerCanOps(mlir::ModuleOp module, mlir::Value callee, mlir::Value precondition) {
-
-	// filter the canOps using the source function of this metadata
-	llvm::SmallVector<mlir::rlc::CanOp, 2> canOps;
-	module->walk([&] (mlir::rlc::CanOp canOp) {
-		if(canOp.getCallee() == callee)
-			canOps.push_back(canOp);
-	});
-
-	// replace the canOps with calls to the precondition function.
-	for (auto canOp : canOps)  {
-		mlir::IRRewriter rewriter(canOp->getContext());
-		rewriter.setInsertionPoint(canOp);
-		if(precondition == nullptr) {
-			// the function has no preconditions, can is trivially true 
-			rewriter.replaceOpWithNewOp<mlir::rlc::Constant>(canOp, true);
-		} else {
-			auto call = rewriter.create<mlir::rlc::CallOp>(
-				canOp->getLoc(),
-				precondition,
-				canOp.getArgs()
-			);
-			canOp.getResult().replaceAllUsesWith(call->getResult(0));
-			rewriter.eraseOp(canOp);
-		}
-	}
-}
-
 namespace mlir::rlc
 {
 #define GEN_PASS_DEF_EXTRACTPRECONDITIONPASS
@@ -88,10 +62,25 @@ namespace mlir::rlc
 
 			for (auto function : ops) {
 				auto metadata = emitPreconditionFunction(function);
-				if(metadata)
-					lowerCanOps(getOperation(), function, metadata.getPreconditionFunction());
-				else
-				 	lowerCanOps(getOperation(), function, nullptr);
+				if(metadata) {
+					for (auto *user :metadata.getSourceFunction().getUsers()) {
+						if(auto casted = mlir::dyn_cast<mlir::rlc::CanOp>(user))
+							casted.replaceAllUsesWith(metadata.getPreconditionFunction());
+					}
+				}
+			}
+
+			llvm::SmallVector<mlir::rlc::CanOp, 2> canOps;
+			getOperation()->walk([&](mlir::rlc::CanOp canOp) {
+				canOps.push_back(canOp);
+			});
+			for(auto canOp : canOps) {
+				if( not canOp->getUses().empty()) { // The CanOp's who still have users are those that referred to an empty precondition.
+					mlir::OpBuilder builder(canOp);
+					auto t = builder.create<mlir::rlc::Constant>(canOp->getLoc(), true);
+					canOp.replaceAllUsesWith(t.getResult());
+				}
+				canOp->erase();
 			}
 		}
 	};

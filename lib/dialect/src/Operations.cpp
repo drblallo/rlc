@@ -1,6 +1,7 @@
 #include "rlc/dialect/Operations.hpp"
 
 #include "llvm/ADT/StringExtras.h"
+#include "mlir/IR/BuiltinTypes.h"
 #include "rlc/dialect/Dialect.h"
 #include "rlc/utils/IRange.hpp"
 #define GET_OP_CLASSES
@@ -477,6 +478,13 @@ mlir::LogicalResult mlir::rlc::CallOp::typeCheck(
 mlir::LogicalResult mlir::rlc::CanOp::typeCheck(
 		mlir::rlc::ModuleBuilder &builder)
 {
+	auto &rewriter = builder.getRewriter();
+	rewriter.replaceOpWithNewOp<CanOp>(
+		*this,
+		mlir::FunctionType::get(getContext(), getCallee().getType().cast<FunctionType>().getInputs(),
+		mlir::rlc::BoolType::get(getContext())),
+		getCallee()
+	);
 	return mlir::success();
 }
 
