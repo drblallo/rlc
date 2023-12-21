@@ -3,9 +3,6 @@
 #include <system_error>
 
 #include "llvm/Support/Error.h"
-#include "mlir/IR/BuiltinTypes.h"
-#include "rlc/dialect/Operations.hpp"
-#include "rlc/dialect/Types.hpp"
 #include "rlc/parser/Lexer.hpp"
 #include "rlc/utils/Error.hpp"
 
@@ -153,26 +150,6 @@ Expected<mlir::rlc::FreeOp> Parser::builtinFree()
 	return builder.create<mlir::rlc::FreeOp>(location, *toDelete);
 }
 
-Expected<mlir::Value> Parser::canExpression()
-{
-	EXPECT(Token::KeywordCan);
-	EXPECT(Token::Identifier);
-	auto funcName = lIdent;
-	auto ref = builder.create<mlir::rlc::UnresolvedReference>(
-					getCurrentSourcePos(), unkType(), funcName);
-	EXPECT(Token::LPar);
-	TRY(args, argumentExpressionList());
-	EXPECT(Token::RPar);
-	auto can =  builder.create<mlir::rlc::CanOp>(
-		getCurrentSourcePos(),
-		// this is ugly but the parser part will be removed before the merge anyway.
-	 	mlir::FunctionType::get(builder.getContext(),{},{mlir::rlc::BoolType::get(builder.getContext())}),
-		ref
-	);
-	auto call = builder.create<mlir::rlc::CallOp>(getCurrentSourcePos(), can->getResult(0), *args);
-	return call->getResult(0);
-}
-
 /**
  * primaryExpression : Ident ("::" Ident)? | Double | int64 | "true" | "false" |
  * "(" expression ")"  | builtinMalloc | builtinFromArray | builtinToArray |
@@ -228,11 +205,6 @@ Expected<mlir::Value> Parser::primaryExpression()
 	if (current == Token::LSquare)
 	{
 		return initializerList();
-	}
-
-	if(current == Token::KeywordCan)
-	{
-		return canExpression();
 	}
 
 	return make_error<RlcError>(

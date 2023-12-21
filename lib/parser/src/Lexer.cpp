@@ -123,8 +123,6 @@ llvm::StringRef rlc::tokenToString(Token t)
 			return "KeywordIn";
 		case Token::KeywordType:
 			return "KeywordType";
-		case Token::KeywordCan:
-			return "KeywordCan";
 		case Token::Indent:
 			return "Indent";
 		case Token::Deindent:
@@ -438,9 +436,6 @@ Token Lexer::eatIdent()
 
 	if (name == "type")
 		return Token::KeywordType;
-
-	if (name == "can")
-		return Token::KeywordCan;
 
 	if (name == "__builtin_malloc_do_not_use")
 		return Token::KeywordMalloc;

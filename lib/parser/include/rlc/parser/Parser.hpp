@@ -5,7 +5,6 @@
 #include "llvm/Support/Error.h"
 #include "mlir/IR/BuiltinOps.h"
 #include "mlir/IR/Diagnostics.h"
-#include "mlir/IR/Value.h"
 #include "rlc/dialect/Operations.hpp"
 #include "rlc/parser/Lexer.hpp"
 
@@ -41,7 +40,6 @@ namespace rlc
 		llvm::Expected<mlir::Value> builtinToArray();
 		llvm::Expected<mlir::rlc::FreeOp> builtinFree();
 		llvm::Expected<mlir::Operation*> builtinDestroy();
-		llvm::Expected<mlir::Value> canExpression();
 		llvm::Expected<mlir::Value> expression();
 		llvm::Expected<mlir::Value> unaryExpression();
 		llvm::Expected<mlir::rlc::EnumDeclarationOp> enumDeclaration();
