@@ -221,7 +221,11 @@ static cl::opt<bool> ExpectFail(
 		cl::init(false),
 		cl::cat(astDumperCategory));
 
-int main(int argc, char *argv[]);
+static cl::opt<std::string> customFuzzerLibPath(
+		"fuzzer-lib",
+		cl::desc("path to the fuzzer library."),
+		cl::init(""),
+		cl::cat(astDumperCategory));
 
 static cl::opt<bool> emitFuzzer(
 	"fuzzer",
@@ -231,6 +235,9 @@ static cl::opt<bool> emitFuzzer(
 );
 
 cl::list<std::string> RPath("rpath", cl::desc("<rpath>"));
+
+
+int main(int argc, char *argv[]);
 
 static mlir::rlc::Driver::Request getRequest()
 {

@@ -1,7 +1,9 @@
+# RUN: rlc %s -o %t -i %stdlib --fuzzer
+# RUN: %t
 import fuzzer.cpp_functions
 import fuzzer.utils
 
-act play():
+act play() -> Play:
 	let current = 0
 	while current != 7:
 	    act subact(Int x)
