@@ -6,7 +6,7 @@ import fuzzer.utils
 act play() -> Play:
 	let current = 0
 	while current != 7:
-	    act subact(Int x)
+	    act subact(Int x) { x < 8 }
 	    current = x
 
 	    actions:
