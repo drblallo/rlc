@@ -10,14 +10,18 @@
 #include "mlir/IR/BuiltinOps.h"
 #include "mlir/IR/BuiltinTypes.h"
 #include "mlir/IR/Location.h"
+#include "mlir/IR/Operation.h"
 #include "mlir/IR/OperationSupport.h"
 #include "mlir/IR/PatternMatch.h"
 #include "mlir/IR/Region.h"
 #include "mlir/IR/Value.h"
 #include "mlir/IR/ValueRange.h"
 #include "mlir/Pass/Pass.h"
+#include "mlir/Support/LLVM.h"
+#include "rlc/dialect/ActionArgumentAnalysis.hpp"
 #include "rlc/dialect/Dialect.h"
 #include "rlc/dialect/Operations.hpp"
+#include "rlc/dialect/SymbolTable.h"
 #include "rlc/dialect/Types.hpp"
 
 static mlir::Value findFunction(mlir::ModuleOp module, llvm::StringRef functionName) {
@@ -186,42 +190,48 @@ static mlir::rlc::DeclarationStatement emitChosenActionDeclaration(
     where arg1,arg2,... are the arguments of the subaction.
 */
 static llvm::SmallVector<mlir::Value, 2> emitSubactionArgumentDeclarations(
-    mlir::FunctionType subactionFunctionType,
+    mlir::Value subaction,
     mlir::Value pickArgument,
     mlir::Value print,
     mlir::Location loc,
-    mlir::OpBuilder builder
+    mlir::OpBuilder builder,
+    mlir::rlc::ModuleBuilder &moduleBuilder
 ) {
     auto ip = builder.saveInsertionPoint();
+     // TODO Why/when does actionFunctionValueToActionStatement return multiple ActionStatements?
+    auto actionStatement = mlir::dyn_cast<mlir::rlc::ActionStatement>(moduleBuilder.actionFunctionValueToActionStatement(subaction)[0]);
+    mlir::rlc::ActionArgumentAnalysis analysis(actionStatement);
     llvm::SmallVector<mlir::Value, 2> arguments;
     int i = 0;
-    for(auto inputType : subactionFunctionType.getInputs()) {
-        if(i == 0) { i++; continue;} //TODO think of a more readable way to iterate over all arguments but the first.
+    for(auto input : actionStatement.getPrecondition().getArguments()) {
 
-        assert(inputType.isa<mlir::rlc::IntegerType>() && "Fuzzing can only handle integer arguments for now.");
+        assert(input.getType().isa<mlir::rlc::IntegerType>() && "Fuzzing can only handle integer arguments for now.");
 
         auto argDecl = builder.create<mlir::rlc::DeclarationStatement>(
             loc,
-            inputType,
-            llvm::StringRef("arg" + std::to_string(i))
+            input.getType(),
+            llvm::StringRef("arg" + std::to_string(i++))
         );
         arguments.emplace_back(argDecl.getResult());
 
         builder.createBlock(&argDecl.getBody());
-        int64_t input_type_size = llvm::dyn_cast<mlir::rlc::IntegerType>(inputType).getSize();
-        auto size = builder.create<mlir::rlc::Constant>(
+        auto input_min = builder.create<mlir::rlc::Constant>(
             loc,
-            input_type_size);
+            analysis.getBoundsOf(input).getMin()
+        );
+        auto input_max = builder.create<mlir::rlc::Constant>(
+            loc,
+            analysis.getBoundsOf(input).getMax()
+        );
         auto call = builder.create<mlir::rlc::CallOp>(
             loc,
             pickArgument,
-            mlir::ValueRange({size.getResult()})
+            mlir::ValueRange({input_min.getResult(), input_max.getResult()})
         );
         // print the value picked for the argument for debugging purposes.
         builder.create<mlir::rlc::CallOp>(loc, print, call.getResult(0));
         builder.create<mlir::rlc::Yield>(loc, call.getResult(0));
         builder.setInsertionPointAfter(argDecl);
-        i++;
     }
     builder.restoreInsertionPoint(ip);
     return arguments;
@@ -250,12 +260,13 @@ static llvm::SmallVector<mlir::Block*, 4> emitSubactionBlocks(
     auto pickArgument = findFunction(action->getParentOfType<mlir::ModuleOp>(), "RLC_Fuzzer_pickArgument");
     auto print = findFunction(action->getParentOfType<mlir::ModuleOp>(),"RLC_Fuzzer_print");
     auto skipFuzzInput = findFunction(action->getParentOfType<mlir::ModuleOp>(),"RLC_Fuzzer_skipInput");
+    mlir::rlc::ModuleBuilder moduleBuilder(action->getParentOfType<mlir::ModuleOp>());
+
     llvm::SmallVector<mlir::Block*, 4> result;
     for(auto subaction : action.getActions()) {
-        auto functionType = llvm::dyn_cast<mlir::FunctionType>(subaction.getType());
         auto *caseBlock = builder.createBlock(parentRegion);
         result.emplace_back(caseBlock);
-        auto args = emitSubactionArgumentDeclarations(functionType, pickArgument, print, action->getLoc(), builder);
+        auto args = emitSubactionArgumentDeclarations(subaction, pickArgument, print, action->getLoc(), builder, moduleBuilder);
         args.insert(args.begin(), actionEntity); // the first argument should be the entity itself.
 
         auto ifStatement = builder.create<mlir::rlc::IfStatement>(action->getLoc());

@@ -1,6 +1,5 @@
 #include <cmath>
 #include <cstdlib>
-#include <exception>
 #include "stdio.h"
 
 // This is implemented by RLC.
@@ -17,10 +16,10 @@ extern "C" void RLC_Fuzzer_getInputint64_t_int64_t_(__int64_t *result, const __i
     *result = rand() % *max;
 }
 
-extern "C" void RLC_Fuzzer_pickArgumentint64_t_int64_t_(__int64_t *result, const __int64_t *size) {
-    *result = abs(rand() % 10); // TODO this is temporary.
+extern "C" void RLC_Fuzzer_pickArgumentint64_t_int64_t_int64_t_(__int64_t *result, const __int64_t *min, __int64_t *max) {
+    printf("Picking an integer argument in range [%ld, %ld]\n", *min, *max);
+    *result = std::abs(rand() % (*max - *min)) + *min;
 }
-
 
 extern "C" void RLC_Fuzzer_skipInputvoid_() {
     printf("skipping the current fuzz input!\n");
