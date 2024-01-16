@@ -61,8 +61,7 @@ static mlir::rlc::DeclarationStatement emitActionEntityDeclaration(
 }
 
 /*
-    not is_done_action(actionEntity) and not stop
-    TODO add a condition to check input length here.
+    not is_done_action(actionEntity) and not stop and isInputLongEnough
 */
 static void emitLoopCondition(
     mlir::rlc::ActionFunction action,
@@ -73,16 +72,24 @@ static void emitLoopCondition(
 ) {
     
     auto ip = builder.saveInsertionPoint(); 
+
+    auto isInputLongEnough = findFunction(action->getParentOfType<mlir::ModuleOp>(), "RLC_Fuzzer_isInputLongEnough");    
     builder.createBlock(condition);
     auto actionIsDone = builder.create<mlir::rlc::CallOp>(
         action->getLoc(),
         action->getResult(1), // the second result of the actionFunction is the isDoneFunction.
         mlir::ValueRange({actionEntity})
     );
+    auto longEnough = builder.create<mlir::rlc::CallOp>(
+        action->getLoc(),
+        isInputLongEnough,
+        mlir::ValueRange({})
+    );
     auto neg = builder.create<mlir::rlc::NotOp>(action->getLoc(), actionIsDone.getResult(0));
     auto neg2 = builder.create<mlir::rlc::NotOp>(action->getLoc(), stopFlag);
     auto conj = builder.create<mlir::rlc::AndOp>(action->getLoc(), neg, neg2);
-    builder.create<mlir::rlc::Yield>(action->getLoc(), conj.getResult());
+    auto conj2 = builder.create<mlir::rlc::AndOp>(action.getLoc(), conj.getResult(), longEnough->getResult(0));
+    builder.create<mlir::rlc::Yield>(action->getLoc(), conj2.getResult());
     builder.restoreInsertionPoint(ip);
 }
 
