@@ -246,6 +246,7 @@ static int linkLibraries(
 		llvm::StringRef clangPath,
 		llvm::StringRef outputFile,
 		bool shared,
+		bool emitFuzzer,
 		const std::vector<std::string> &extraObjectFiles,
 		const std::vector<std::string> &rpaths)
 {
@@ -266,14 +267,24 @@ static int linkLibraries(
 	else
 	{
 		argSource.push_back("-no-pie");
+	}
+	if(emitFuzzer)
+	{
+		argSource.push_back("-fsanitize=fuzzer,address");
+	}
+
 	for(auto rpathEntry :rpaths)
 		argSource.push_back("-Wl,-rpath=" + rpathEntry);
-	}
+	
 	for (auto extraObject : extraObjectFiles)
 		argSource.push_back(extraObject);
 
 	llvm::SmallVector<llvm::StringRef, 4> args(
 			argSource.begin(), argSource.end());
+
+	for( auto arg : args)
+		llvm::dbgs() << " " << arg;
+	llvm::dbgs() << "\n";
 
 	auto res = llvm::sys::ExecuteAndWait(
 			realPath, args, std::nullopt, {}, 0, 0, &Errors);
@@ -338,6 +349,7 @@ namespace mlir::rlc
 							clangPath,
 							outputFile,
 							targetInfo->isShared(),
+							emitFuzzer,
 							*extraObjectFiles,
 							*rpaths) != 0)
 				signalPassFailure();
