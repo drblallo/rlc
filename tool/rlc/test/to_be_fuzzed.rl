@@ -18,6 +18,6 @@ act play() -> Play:
 	        act that(Int a) {a >= 0, a < 100}
 	        crash_on_five(a)
 	    
-	    act subact(Int x) {x < 3}
+	    act subact(Int x) {x > -12, x < 3}
 
 

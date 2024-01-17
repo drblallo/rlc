@@ -285,6 +285,16 @@ static mlir::rlc::Driver configureDriver(
 	includes.push_back(directory.str());
 	includes.push_back(rlcDirectory);
 
+	if(emitFuzzer)
+	{
+		string fuzzerLibPath = customFuzzerLibPath.empty()
+			? llvm::sys::path::parent_path(pathToRlc).str() + "/../lib/" + FUZZER_LIBRARY_FILENAME 
+			: customFuzzerLibPath.getValue();
+
+		ExtraObjectFiles.addValue(fuzzerLibPath);
+		RPath.addValue(llvm::sys::path::parent_path(fuzzerLibPath).str());
+	}
+
 	Driver driver(srcManager, InputFilePath, outputFile, OS);
 	driver.setRequest(getRequest());
 	driver.setDebug(debugInfo);
@@ -294,6 +304,8 @@ static mlir::rlc::Driver configureDriver(
 	driver.setClangPath(clangPath);
 	driver.setIncludeDirs(includes);
 	driver.setExtraObjectFile(ExtraObjectFiles);
+	driver.setRPath(RPath);
+	driver.setEmitFuzzer(emitFuzzer);
 	driver.setTargetInfo(&info);
 	driver.setEmitBoundChecks(emitBoundChecks);
 

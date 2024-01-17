@@ -54,6 +54,7 @@ static mlir::rlc::DeclarationStatement emitActionEntityDeclaration(
         simulatorFunction->getLoc(),
         // the first result of the ActionFunction op is the function that initializes the entity.
         action->getResults().front(),
+        true,
         mlir::ValueRange({}) // TODO Assuming the action has no args for now.
     );
     builder.create<mlir::rlc::Yield>(simulatorFunction->getLoc(), call.getResult(0));
@@ -79,11 +80,13 @@ static void emitLoopCondition(
     auto actionIsDone = builder.create<mlir::rlc::CallOp>(
         action->getLoc(),
         action->getResult(1), // the second result of the actionFunction is the isDoneFunction.
+        true,
         mlir::ValueRange({actionEntity})
     );
     auto longEnough = builder.create<mlir::rlc::CallOp>(
         action->getLoc(),
         isInputLongEnough,
+        false,
         mlir::ValueRange({})
     );
     auto neg = builder.create<mlir::rlc::NotOp>(action->getLoc(), actionIsDone.getResult(0));
@@ -136,6 +139,7 @@ static mlir::rlc::DeclarationStatement emitChosenActionDeclaration(
     auto initialized = builder.create<mlir::rlc::CallOp>(
         action->getLoc(),
         initAvailableSubactions,
+        false,
         mlir::ValueRange({})
     );
     builder.create<mlir::rlc::Yield>(action->getLoc(), initialized.getResult(0));
@@ -172,6 +176,7 @@ static mlir::rlc::DeclarationStatement emitChosenActionDeclaration(
         builder.create<mlir::rlc::CallOp>(
             action->getLoc(),
             addAvailableSubaction,
+            false,
             mlir::ValueRange{availableSubactions.getResult(), subactionIndex.getResult()}
         );
         builder.create<mlir::rlc::Yield>(action->getLoc());
@@ -194,6 +199,7 @@ static mlir::rlc::DeclarationStatement emitChosenActionDeclaration(
     auto call = builder.create<mlir::rlc::CallOp>(
         action->getLoc(),
         pickSubaction,
+        false,
         mlir::ValueRange{availableSubactions.getResult()}
     );
     builder.create<mlir::rlc::Yield>(action->getLoc(), call.getResult(0));
@@ -271,10 +277,11 @@ static llvm::SmallVector<mlir::Value, 2> emitSubactionArgumentDeclarations(
             auto call = builder.create<mlir::rlc::CallOp>(
                 loc,
                 pickArgument,
+                false,
                 mlir::ValueRange({input_min.getResult(), input_max.getResult()})
             );
             // print the value picked for the argument for debugging purposes.
-            builder.create<mlir::rlc::CallOp>(loc, print, call.getResult(0));
+            builder.create<mlir::rlc::CallOp>(loc, print, false, call.getResult(0));
             builder.create<mlir::rlc::AssignOp>(loc, arguments[current_arg_index++], call.getResult(0));
         }
         builder.create<mlir::rlc::Yield>(loc);
@@ -323,12 +330,12 @@ static llvm::SmallVector<mlir::Block*, 4> emitSubactionBlocks(
         auto ifStatement = builder.create<mlir::rlc::IfStatement>(action->getLoc());
         builder.createBlock(&ifStatement.getCondition());
         auto can = builder.create<mlir::rlc::CanOp>(action->getLoc(), subaction);
-        auto can_call = builder.create<mlir::rlc::CallOp>(action->getLoc(), can.getResult(), args);
+        auto can_call = builder.create<mlir::rlc::CallOp>(action->getLoc(), can.getResult(), false, args);
         auto neg = builder.create<mlir::rlc::NotOp>(action->getLoc(), can_call->getResult(0));
         builder.create<mlir::rlc::Yield>(action -> getLoc(), neg.getResult());
 
         builder.createBlock(&ifStatement.getTrueBranch());
-        builder.create<mlir::rlc::CallOp>(action->getLoc(), skipFuzzInput, mlir::ValueRange({}));
+        builder.create<mlir::rlc::CallOp>(action->getLoc(), skipFuzzInput, false, mlir::ValueRange({}));
         auto t = builder.create<mlir::rlc::Constant>(action.getLoc(), true);
         builder.create<mlir::rlc::AssignOp>(action.getLoc(), stopFlag, t.getResult());
         builder.create<mlir::rlc::Yield>(action->getLoc());
@@ -337,6 +344,7 @@ static llvm::SmallVector<mlir::Block*, 4> emitSubactionBlocks(
         builder.create<mlir::rlc::CallOp>(
             action.getLoc(),
             subaction,
+            false,
             args
         );
         builder.create<mlir::rlc::Yield>(action->getLoc());
@@ -383,7 +391,9 @@ static void emitSimulator(mlir::rlc::ActionFunction action) {
         loc,
         llvm::StringRef("RLC_Fuzzer_simulate"),
         simulatorFunctionType,
-        builder.getStrArrayAttr({}));
+        builder.getStrArrayAttr({}),
+        false
+    );
     builder.createBlock(&simulatorFunction.getBody()); 
 
     auto entityDeclaration = emitActionEntityDeclaration(action, simulatorFunction, builder);

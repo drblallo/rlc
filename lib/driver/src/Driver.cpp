@@ -41,6 +41,11 @@ namespace mlir::rlc
 		}
 		manager.addPass(mlir::createCanonicalizerPass());
 
+
+		if (emitFuzzer) {
+			manager.addPass(mlir::rlc::createEmitSimulatorPass());
+		}
+
 		manager.addPass(mlir::rlc::createEmitImplicitDestructorInvocationsPass());
 		manager.addPass(mlir::rlc::createEmitImplicitDestructorsPass());
 		manager.addPass(mlir::rlc::createLowerForFieldOpPass());
@@ -143,6 +148,8 @@ namespace mlir::rlc
 																					&extraObjectFiles,
 																					dumpIR,
 																					Request::compile == request,
+																					emitFuzzer,
+																					&rPath,
 																					targetInfo }));
 	}
 
