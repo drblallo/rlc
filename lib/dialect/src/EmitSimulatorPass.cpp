@@ -2,6 +2,7 @@
 #include <cassert>
 #include <cstdint>
 #include <string>
+#include "llvm/ADT/ArrayRef.h"
 #include "llvm/ADT/SmallVector.h"
 #include "llvm/ADT/StringRef.h"
 #include "llvm/Support/Casting.h"
@@ -111,6 +112,7 @@ static void emitLoopCondition(
 static mlir::rlc::DeclarationStatement emitChosenActionDeclaration(
     mlir::rlc::ActionFunction action,
     mlir::Value actionEntity,
+    mlir::rlc::ModuleBuilder &moduleBuilder,
     mlir::OpBuilder builder
 ) {
     auto ip = builder.saveInsertionPoint();
@@ -143,7 +145,7 @@ static mlir::rlc::DeclarationStatement emitChosenActionDeclaration(
     //      if(subAction.resumptionIndex == actionEntity.resumptionIndex)
     //          availableSubactions.push(subactionID)
     int64_t index = 0;
-    action.getBody().walk([&](mlir::rlc::ActionStatement subaction) {
+    for(auto subactionFunction : action.getActions()) {
         auto ifStatement = builder.create<mlir::rlc::IfStatement>(action->getLoc());
         builder.createBlock(&ifStatement.getCondition());
         auto storedResumptionPoint = builder.create<mlir::rlc::MemberAccess>(
@@ -151,9 +153,19 @@ static mlir::rlc::DeclarationStatement emitChosenActionDeclaration(
             actionEntity,
             0
         );
-        auto subactionResumptionPoint = builder.create<mlir::rlc::Constant>(action.getLoc(), (int64_t) subaction.getResumptionPoint());
-        auto eq = builder.create<mlir::rlc::EqualOp>(action->getLoc(), storedResumptionPoint, subactionResumptionPoint);
-        builder.create<mlir::rlc::Yield>(ifStatement.getLoc(), eq.getResult());
+
+        // the subactionFunction is available if the stored resumptionIndex matches any of its acitonStatements' resumptionIndex.
+        auto actionStatements = moduleBuilder.actionFunctionValueToActionStatement(subactionFunction);
+        mlir::Value lastOperand =
+			builder.create<mlir::rlc::Constant>(action.getLoc(), false);
+        for(auto *actionStatement : actionStatements) {
+            auto cast = mlir::dyn_cast<mlir::rlc::ActionStatement>(actionStatement);
+            auto subactionResumptionPoint = builder.create<mlir::rlc::Constant>(action.getLoc(), (int64_t) cast.getResumptionPoint());
+            auto eq = builder.create<mlir::rlc::EqualOp>(action->getLoc(), storedResumptionPoint, subactionResumptionPoint);
+            lastOperand = builder.create<mlir::rlc::OrOp>(action.getLoc(), lastOperand, eq.getResult());
+        }
+        
+        builder.create<mlir::rlc::Yield>(ifStatement.getLoc(), lastOperand);
 
         auto *trueBranch = builder.createBlock(&ifStatement.getTrueBranch());
         auto subactionIndex = builder.create<mlir::rlc::Constant>(action->getLoc(), index);
@@ -170,7 +182,7 @@ static mlir::rlc::DeclarationStatement emitChosenActionDeclaration(
         
         builder.setInsertionPointAfter(ifStatement);
         index++;
-    });
+    }
 
     // let chosenAction = pick_subaction(availableSubactions)
     auto chosenActionDeclaration = builder.create<mlir::rlc::DeclarationStatement>(
@@ -198,6 +210,7 @@ static mlir::rlc::DeclarationStatement emitChosenActionDeclaration(
 */
 static llvm::SmallVector<mlir::Value, 2> emitSubactionArgumentDeclarations(
     mlir::Value subaction,
+    mlir::Value actionEntity,
     mlir::Value pickArgument,
     mlir::Value print,
     mlir::Location loc,
@@ -205,40 +218,70 @@ static llvm::SmallVector<mlir::Value, 2> emitSubactionArgumentDeclarations(
     mlir::rlc::ModuleBuilder &moduleBuilder
 ) {
     auto ip = builder.saveInsertionPoint();
-     // TODO Why/when does actionFunctionValueToActionStatement return multiple ActionStatements?
-    auto actionStatement = mlir::dyn_cast<mlir::rlc::ActionStatement>(moduleBuilder.actionFunctionValueToActionStatement(subaction)[0]);
-    mlir::rlc::ActionArgumentAnalysis analysis(actionStatement);
-    llvm::SmallVector<mlir::Value, 2> arguments;
-    int i = 0;
-    for(auto input : actionStatement.getPrecondition().getArguments()) {
+    auto actionStatements = moduleBuilder.actionFunctionValueToActionStatement(subaction);
 
-        assert(input.getType().isa<mlir::rlc::IntegerType>() && "Fuzzing can only handle integer arguments for now.");
+    llvm::SmallVector<mlir::Value, 2> arguments;
+    // declare the arguments
+    int i = 0;
+    for(auto inputType : mlir::dyn_cast<mlir::FunctionType>(subaction.getType()).getInputs()) {
+        // The first input is the actionEntity, which does not need to be declared here.
+        if(i == 0) { i++; continue;} //TODO think of a more readable way to iterate over all arguments but the first.
+        assert(inputType.isa<mlir::rlc::IntegerType>() && "Fuzzing can only handle integer arguments for now.");
 
         auto argDecl = builder.create<mlir::rlc::DeclarationStatement>(
             loc,
-            input.getType(),
+            inputType,
             llvm::StringRef("arg" + std::to_string(i++))
         );
-        arguments.emplace_back(argDecl.getResult());
-
         builder.createBlock(&argDecl.getBody());
-        auto input_min = builder.create<mlir::rlc::Constant>(
-            loc,
-            analysis.getBoundsOf(input).getMin()
-        );
-        auto input_max = builder.create<mlir::rlc::Constant>(
-            loc,
-            analysis.getBoundsOf(input).getMax()
-        );
-        auto call = builder.create<mlir::rlc::CallOp>(
-            loc,
-            pickArgument,
-            mlir::ValueRange({input_min.getResult(), input_max.getResult()})
-        );
-        // print the value picked for the argument for debugging purposes.
-        builder.create<mlir::rlc::CallOp>(loc, print, call.getResult(0));
-        builder.create<mlir::rlc::Yield>(loc, call.getResult(0));
+        auto zero = builder.create<mlir::rlc::Constant>(
+					loc, static_cast<int64_t>(0));
+        builder.create<mlir::rlc::Yield>(loc, zero.getResult());
+        arguments.emplace_back(argDecl.getResult());
         builder.setInsertionPointAfter(argDecl);
+    }
+
+    // for each action statement, if the resumeIndex matches that of the action statement, assign arguments respecting the action statement's constraints.
+    auto storedResumptionPoint = builder.create<mlir::rlc::MemberAccess>(
+            loc,
+            actionEntity,
+            0
+        );
+    for(auto *actionStatement : actionStatements) {
+        auto cast = mlir::dyn_cast<mlir::rlc::ActionStatement>(*actionStatement);
+        auto ifStatement = builder.create<mlir::rlc::IfStatement>(loc);
+        builder.createBlock(&ifStatement.getCondition());
+        auto subactionResumptionPoint = builder.create<mlir::rlc::Constant>(loc, (int64_t) cast.getResumptionPoint());
+        auto eq = builder.create<mlir::rlc::EqualOp>(loc, storedResumptionPoint, subactionResumptionPoint);
+        builder.create<mlir::rlc::Yield>(loc, eq.getResult());
+
+        builder.createBlock(&ifStatement.getTrueBranch());
+        mlir::rlc::ActionArgumentAnalysis analysis(cast);
+
+        int current_arg_index = 0;
+        for(auto input : cast.getPrecondition().getArguments()) {
+            auto input_min = builder.create<mlir::rlc::Constant>(
+                loc,
+                analysis.getBoundsOf(input).getMin()
+            );
+            auto input_max = builder.create<mlir::rlc::Constant>(
+                loc,
+                analysis.getBoundsOf(input).getMax()
+            );
+            auto call = builder.create<mlir::rlc::CallOp>(
+                loc,
+                pickArgument,
+                mlir::ValueRange({input_min.getResult(), input_max.getResult()})
+            );
+            // print the value picked for the argument for debugging purposes.
+            builder.create<mlir::rlc::CallOp>(loc, print, call.getResult(0));
+            builder.create<mlir::rlc::AssignOp>(loc, arguments[current_arg_index++], call.getResult(0));
+        }
+        builder.create<mlir::rlc::Yield>(loc);
+
+        builder.createBlock(&ifStatement.getElseBranch());
+        builder.create<mlir::rlc::Yield>(loc);
+        builder.setInsertionPointAfter(ifStatement);
     }
     builder.restoreInsertionPoint(ip);
     return arguments;
@@ -261,19 +304,20 @@ static llvm::SmallVector<mlir::Block*, 4> emitSubactionBlocks(
     mlir::Region *parentRegion,
     mlir::Value actionEntity,
     mlir::Value stopFlag,
+    mlir::rlc::ModuleBuilder &moduleBuilder,
     mlir::OpBuilder builder
 ) {
     auto ip = builder.saveInsertionPoint();
     auto pickArgument = findFunction(action->getParentOfType<mlir::ModuleOp>(), "RLC_Fuzzer_pickArgument");
     auto print = findFunction(action->getParentOfType<mlir::ModuleOp>(),"RLC_Fuzzer_print");
     auto skipFuzzInput = findFunction(action->getParentOfType<mlir::ModuleOp>(),"RLC_Fuzzer_skipInput");
-    mlir::rlc::ModuleBuilder moduleBuilder(action->getParentOfType<mlir::ModuleOp>());
+    
 
     llvm::SmallVector<mlir::Block*, 4> result;
     for(auto subaction : action.getActions()) {
         auto *caseBlock = builder.createBlock(parentRegion);
         result.emplace_back(caseBlock);
-        auto args = emitSubactionArgumentDeclarations(subaction, pickArgument, print, action->getLoc(), builder, moduleBuilder);
+        auto args = emitSubactionArgumentDeclarations(subaction, actionEntity, pickArgument, print, action->getLoc(), builder, moduleBuilder);
         args.insert(args.begin(), actionEntity); // the first argument should be the entity itself.
 
         auto ifStatement = builder.create<mlir::rlc::IfStatement>(action->getLoc());
@@ -308,7 +352,7 @@ static llvm::SmallVector<mlir::Block*, 4> emitSubactionBlocks(
     fun RLC_Fuzzer_simulate():
         let actionEntity = play()
         let stop = false
-        while not is_done_action(actionEntity) and not stop:
+        while not is_done_action(actionEntity) and not stop and isInputLongEnough():
             let availableSubactions = Vector<Int>
             if(subAction0.resumptionIndex == actionEntity.resumptionIndex)
                 availableSubactions.push(0)
@@ -331,8 +375,8 @@ static llvm::SmallVector<mlir::Block*, 4> emitSubactionBlocks(
 */
 static void emitSimulator(mlir::rlc::ActionFunction action) {
     auto loc = action.getLoc();
-
     mlir::OpBuilder builder(action);
+    mlir::rlc::ModuleBuilder moduleBuilder(action->getParentOfType<mlir::ModuleOp>());
     
     auto simulatorFunctionType = mlir::FunctionType::get(action.getContext(), {}, {});
     auto simulatorFunction = builder.create<mlir::rlc::FunctionOp>(
@@ -356,8 +400,8 @@ static void emitSimulator(mlir::rlc::ActionFunction action) {
     auto whileStmt = builder.create<mlir::rlc::WhileStatement>(loc);
     emitLoopCondition(action, &whileStmt.getCondition(), entityDeclaration.getResult(), stopFlag.getResult(), builder);
     builder.createBlock(&whileStmt.getBody());
-    auto chosenActionDeclaration = emitChosenActionDeclaration(action, entityDeclaration.getResult(), builder);
-    auto blocks = emitSubactionBlocks(action, &whileStmt.getBody(), entityDeclaration.getResult(), stopFlag.getResult(), builder);
+    auto chosenActionDeclaration = emitChosenActionDeclaration(action, entityDeclaration.getResult(), moduleBuilder, builder);
+    auto blocks = emitSubactionBlocks(action, &whileStmt.getBody(), entityDeclaration.getResult(), stopFlag.getResult(), moduleBuilder, builder);
     builder.create<mlir::rlc::SelectBranch>(loc, chosenActionDeclaration.getResult(), blocks);
    
     builder.setInsertionPointAfter(whileStmt);

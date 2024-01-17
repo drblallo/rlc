@@ -50,7 +50,7 @@ extern "C" void RLC_Fuzzer_pickArgumentint64_t_int64_t_int64_t_(__int64_t *resul
 
 extern "C" void RLC_Fuzzer_isInputLongEnoughbool_(__int8_t *result) {
     // printf("fuzz_input_length: %d, byte_offfset: %d, bit_offset: %d\n", fuzz_input_length, byte_offset, bit_offset);
-    *result = (fuzz_input_length - byte_offset) > 5; // TODO handle this better.
+    *result = (fuzz_input_length - byte_offset) > 10; // TODO handle this better.
 }
 
 extern "C" void RLC_Fuzzer_printvoid_int64_t_(const __int64_t *message) {

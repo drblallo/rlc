@@ -282,10 +282,6 @@ static int linkLibraries(
 	llvm::SmallVector<llvm::StringRef, 4> args(
 			argSource.begin(), argSource.end());
 
-	for( auto arg : args)
-		llvm::dbgs() << " " << arg;
-	llvm::dbgs() << "\n";
-
 	auto res = llvm::sys::ExecuteAndWait(
 			realPath, args, std::nullopt, {}, 0, 0, &Errors);
 	llvm::errs() << Errors;
