@@ -34,6 +34,10 @@ namespace mlir::rlc
 		manager.addPass(mlir::rlc::createTypeCheckPass());
 		manager.addPass(mlir::rlc::createValidateStorageQualifiersPass());
 
+		if (emitFuzzer) {
+			manager.addPass(mlir::rlc::createEmitSimulatorPass());
+		}
+
 		if (request == Request::dumpCheckedAST)
 		{
 			manager.addPass(mlir::rlc::createPrintIRPass({ OS, hidePosition }));
@@ -41,10 +45,6 @@ namespace mlir::rlc
 		}
 		manager.addPass(mlir::createCanonicalizerPass());
 
-
-		if (emitFuzzer) {
-			manager.addPass(mlir::rlc::createEmitSimulatorPass());
-		}
 
 		manager.addPass(mlir::rlc::createEmitImplicitDestructorInvocationsPass());
 		manager.addPass(mlir::rlc::createEmitImplicitDestructorsPass());

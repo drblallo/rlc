@@ -47,7 +47,7 @@ limitations under the License.
 #include "rlc/parser/MultiFileParser.hpp"
 #include "rlc/python/Interfaces.hpp"
 #include "rlc/python/Passes.hpp"
-#include "Fuzzer.hpp"
+#include "rlc/Fuzzer.hpp"
 
 #if NDEBUG
 static constexpr const bool isDebug = false;
