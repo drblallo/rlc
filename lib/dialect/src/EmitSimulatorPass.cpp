@@ -75,7 +75,7 @@ static void emitLoopCondition(
     
     auto ip = builder.saveInsertionPoint(); 
 
-    auto isInputLongEnough = findFunction(action->getParentOfType<mlir::ModuleOp>(), "RLC_Fuzzer_isInputLongEnough");    
+    auto isInputLongEnough = findFunction(action->getParentOfType<mlir::ModuleOp>(), "RLC_Fuzzer_is_input_long_enough");    
     builder.createBlock(condition);
     auto actionIsDone = builder.create<mlir::rlc::CallOp>(
         action->getLoc(),
@@ -120,9 +120,9 @@ static mlir::rlc::DeclarationStatement emitChosenActionDeclaration(
 ) {
     auto ip = builder.saveInsertionPoint();
 
-    auto initAvailableSubactions = findFunction(action->getParentOfType<mlir::ModuleOp>(), "init_available_subactions");
-    auto addAvailableSubaction = findFunction(action->getParentOfType<mlir::ModuleOp>(), "add_available_subaction");
-    auto pickSubaction = findFunction(action->getParentOfType<mlir::ModuleOp>(), "pick_subaction");
+    auto initAvailableSubactions = findFunction(action->getParentOfType<mlir::ModuleOp>(), "RLC_Fuzzer_init_available_subactions");
+    auto addAvailableSubaction = findFunction(action->getParentOfType<mlir::ModuleOp>(), "RLC_Fuzzer_add_available_subaction");
+    auto pickSubaction = findFunction(action->getParentOfType<mlir::ModuleOp>(), "RLC_Fuzzer_pick_subaction");
 
     // let availableSubactions = Vector<Int>
     auto intVectorType = mlir::rlc::EntityType::getIdentified(
@@ -315,9 +315,9 @@ static llvm::SmallVector<mlir::Block*, 4> emitSubactionBlocks(
     mlir::OpBuilder builder
 ) {
     auto ip = builder.saveInsertionPoint();
-    auto pickArgument = findFunction(action->getParentOfType<mlir::ModuleOp>(), "RLC_Fuzzer_pickArgument");
+    auto pickArgument = findFunction(action->getParentOfType<mlir::ModuleOp>(), "RLC_Fuzzer_pick_argument");
     auto print = findFunction(action->getParentOfType<mlir::ModuleOp>(),"RLC_Fuzzer_print");
-    auto skipFuzzInput = findFunction(action->getParentOfType<mlir::ModuleOp>(),"RLC_Fuzzer_skipInput");
+    auto skipFuzzInput = findFunction(action->getParentOfType<mlir::ModuleOp>(),"RLC_Fuzzer_skip_input");
     
 
     llvm::SmallVector<mlir::Block*, 4> result;
