@@ -5,7 +5,7 @@
 #include <algorithm>
 
 // This is implemented by RLC.
-extern "C" void rl_RLC_Fuzzer_simulate_();
+extern "C" void rl_fuzzer_fuzz_action_function_();
 
 
 int byte_offset;
@@ -36,28 +36,28 @@ int64_t consume_bits(const char *Data, int num_bits, int &byte_offset, int &bit_
 }
 
 // TODO this is not completely uniform since the number of possible inputs is not a power of two, think about whether or not that's a problem.
-extern "C" void rl_RLC_Fuzzer_get_input__int64_t_r_int64_t(__int64_t *result, const __int64_t *max) {
+extern "C" void rl_fuzzer_get_input__int64_t_r_int64_t(__int64_t *result, const __int64_t *max) {
     // printf("Generating input in range [0, %ld)\n", *max);
     int num_bits = ceil(log2(*max));
     *result = consume_bits(fuzz_input, num_bits, byte_offset, bit_offset) % *max;
 }
 
-extern "C" void rl_RLC_Fuzzer_pick_argument__int64_t_int64_t_r_int64_t(__int64_t *result, const __int64_t *min, __int64_t *max) {
+extern "C" void rl_fuzzer_pick_argument__int64_t_int64_t_r_int64_t(__int64_t *result, const __int64_t *min, __int64_t *max) {
     // printf("Picking an integer argument in range [%ld, %ld]\n", *min, *max);
     int num_bits = ceil(log2(*max - *min));
     *result = std::abs(consume_bits(fuzz_input, num_bits, byte_offset, bit_offset)) % (*max - *min) + *min;
 }
 
-extern "C" void rl_RLC_Fuzzer_is_input_long_enough__r_bool(__int8_t *result) {
+extern "C" void rl_fuzzer_is_input_long_enough__r_bool(__int8_t *result) {
     // printf("fuzz_input_length: %d, byte_offfset: %d, bit_offset: %d\n", fuzz_input_length, byte_offset, bit_offset);
     *result = (fuzz_input_length - byte_offset) > 10; // TODO handle this better.
 }
 
-extern "C" void rl_RLC_Fuzzer_print__int64_t_r_void(const __int64_t *message) {
+extern "C" void rl_fuzzer_print__int64_t_r_void(const __int64_t *message) {
     // printf("Message: %ld \n", *message);
 }
 
-extern "C" void rl_RLC_Fuzzer_skip_input__r_void() {
+extern "C" void rl_fuzzer_skip_input__r_void() {
     // printf("skipping the current fuzz input!\n");
 }
 
@@ -69,6 +69,6 @@ extern "C" int LLVMFuzzerTestOneInput(const char *Data, size_t Size) {
     fuzz_input_length = Size;
 
     
-    rl_RLC_Fuzzer_simulate_();
+    rl_fuzzer_fuzz_action_function_();
     return 0;
 }

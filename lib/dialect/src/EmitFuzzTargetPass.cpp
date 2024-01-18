@@ -41,24 +41,24 @@ static mlir::Value findFunction(mlir::ModuleOp module, llvm::StringRef functionN
 */
 static mlir::rlc::DeclarationStatement emitActionEntityDeclaration(
         mlir::rlc::ActionFunction action,
-        mlir::rlc::FunctionOp simulatorFunction,
+        mlir::rlc::FunctionOp fuzzActionFunction,
         mlir::OpBuilder builder
 ) {
     auto ip = builder.saveInsertionPoint();
     auto declaration = builder.create<mlir::rlc::DeclarationStatement>(
-        simulatorFunction->getLoc(),
+        fuzzActionFunction->getLoc(),
         action.getEntityType(),
         llvm::StringRef("actionEntity"));
     builder.createBlock(&declaration.getBody());
 
     auto call = builder.create<mlir::rlc::CallOp>(
-        simulatorFunction->getLoc(),
+        fuzzActionFunction->getLoc(),
         // the first result of the ActionFunction op is the function that initializes the entity.
         action->getResults().front(),
         true,
         mlir::ValueRange({}) // TODO Assuming the action has no args for now.
     );
-    builder.create<mlir::rlc::Yield>(simulatorFunction->getLoc(), call.getResult(0));
+    builder.create<mlir::rlc::Yield>(fuzzActionFunction->getLoc(), call.getResult(0));
     builder.restoreInsertionPoint(ip);
     return declaration;
 }
@@ -76,7 +76,7 @@ static void emitLoopCondition(
     
     auto ip = builder.saveInsertionPoint(); 
 
-    auto isInputLongEnough = findFunction(action->getParentOfType<mlir::ModuleOp>(), "RLC_Fuzzer_is_input_long_enough");    
+    auto isInputLongEnough = findFunction(action->getParentOfType<mlir::ModuleOp>(), "fuzzer_is_input_long_enough");    
     builder.createBlock(condition);
     auto actionIsDone = builder.create<mlir::rlc::CallOp>(
         action->getLoc(),
@@ -121,9 +121,9 @@ static mlir::Value emitChosenActionDeclaration(
 ) {
     auto ip = builder.saveInsertionPoint();
 
-    auto initAvailableSubactions = findFunction(action->getParentOfType<mlir::ModuleOp>(), "RLC_Fuzzer_init_available_subactions");
-    auto addAvailableSubaction = findFunction(action->getParentOfType<mlir::ModuleOp>(), "RLC_Fuzzer_add_available_subaction");
-    auto pickSubaction = findFunction(action->getParentOfType<mlir::ModuleOp>(), "RLC_Fuzzer_pick_subaction");
+    auto initAvailableSubactions = findFunction(action->getParentOfType<mlir::ModuleOp>(), "fuzzer_init_available_subactions");
+    auto addAvailableSubaction = findFunction(action->getParentOfType<mlir::ModuleOp>(), "fuzzer_add_available_subaction");
+    auto pickSubaction = findFunction(action->getParentOfType<mlir::ModuleOp>(), "fuzzer_pick_subaction");
 
     // let availableSubactions = Vector<Int>
     auto intVectorType = mlir::rlc::EntityType::getIdentified(
@@ -298,9 +298,9 @@ static llvm::SmallVector<mlir::Block*, 4> emitSubactionBlocks(
     mlir::OpBuilder builder
 ) {
     auto ip = builder.saveInsertionPoint();
-    auto pickArgument = findFunction(action->getParentOfType<mlir::ModuleOp>(), "RLC_Fuzzer_pick_argument");
-    auto print = findFunction(action->getParentOfType<mlir::ModuleOp>(),"RLC_Fuzzer_print");
-    auto skipFuzzInput = findFunction(action->getParentOfType<mlir::ModuleOp>(),"RLC_Fuzzer_skip_input");
+    auto pickArgument = findFunction(action->getParentOfType<mlir::ModuleOp>(), "fuzzer_pick_argument");
+    auto print = findFunction(action->getParentOfType<mlir::ModuleOp>(),"fuzzer_print");
+    auto skipFuzzInput = findFunction(action->getParentOfType<mlir::ModuleOp>(),"fuzzer_skip_input");
     
 
     llvm::SmallVector<mlir::Block*, 4> result;
@@ -340,7 +340,7 @@ static llvm::SmallVector<mlir::Block*, 4> emitSubactionBlocks(
 }
 
 /*
-    fun RLC_Fuzzer_simulate():
+    fun fuzzer_fuzz_action_function():
         let actionEntity = play()
         let stop = false
         while not is_done_action(actionEntity) and not stop and isInputLongEnough():
@@ -364,30 +364,30 @@ static llvm::SmallVector<mlir::Block*, 4> emitSubactionBlocks(
                     ...
                 ...
 */
-static void emitSimulator(mlir::rlc::ActionFunction action) {
+static void emitFuzzActionFunction(mlir::rlc::ActionFunction action) {
     auto loc = action.getLoc();
     mlir::OpBuilder builder(action);
     mlir::rlc::ModuleBuilder moduleBuilder(action->getParentOfType<mlir::ModuleOp>());
     
-    auto simulatorFunctionType = mlir::FunctionType::get(action.getContext(), {}, {});
-    auto simulatorFunction = builder.create<mlir::rlc::FunctionOp>(
+    auto fuzzActionFunctionType = mlir::FunctionType::get(action.getContext(), {}, {});
+    auto fuzzActionFunction = builder.create<mlir::rlc::FunctionOp>(
         loc,
-        llvm::StringRef("RLC_Fuzzer_simulate"),
-        simulatorFunctionType,
+        llvm::StringRef("fuzzer_fuzz_action_function"),
+        fuzzActionFunctionType,
         builder.getStrArrayAttr({}),
         false
     );
-    builder.createBlock(&simulatorFunction.getBody()); 
+    builder.createBlock(&fuzzActionFunction.getBody()); 
 
-    auto entityDeclaration = emitActionEntityDeclaration(action, simulatorFunction, builder);
+    auto entityDeclaration = emitActionEntityDeclaration(action, fuzzActionFunction, builder);
 
     auto stopFlag = builder.create<mlir::rlc::DeclarationStatement>(
-        simulatorFunction->getLoc(),
+        fuzzActionFunction->getLoc(),
         mlir::rlc::BoolType::get(builder.getContext()),
         llvm::StringRef("stop"));
     builder.createBlock(&stopFlag.getBody());
-    auto f = builder.create<mlir::rlc::Constant>(simulatorFunction->getLoc(), false);
-    builder.create<mlir::rlc::Yield>(simulatorFunction.getLoc(), f.getResult());
+    auto f = builder.create<mlir::rlc::Constant>(fuzzActionFunction->getLoc(), false);
+    builder.create<mlir::rlc::Yield>(fuzzActionFunction.getLoc(), f.getResult());
     builder.setInsertionPointAfter(stopFlag);
 
     auto whileStmt = builder.create<mlir::rlc::WhileStatement>(loc);
@@ -403,12 +403,12 @@ static void emitSimulator(mlir::rlc::ActionFunction action) {
 
 namespace mlir::rlc
 {
-#define GEN_PASS_DECL_EMITSIMULATORPASS
-#define GEN_PASS_DEF_EMITSIMULATORPASS
+#define GEN_PASS_DECL_EMITFUZZTARGETPASS
+#define GEN_PASS_DEF_EMITFUZZTARGETPASS
 #include "rlc/dialect/Passes.inc"
-	struct EmitSimulatorPass: public impl::EmitSimulatorPassBase<EmitSimulatorPass>
+	struct EmitFuzzTargetPass: public impl::EmitFuzzTargetPassBase<EmitFuzzTargetPass>
 	{
-        using impl::EmitSimulatorPassBase<EmitSimulatorPass>::EmitSimulatorPassBase;
+        using impl::EmitFuzzTargetPassBase<EmitFuzzTargetPass>::EmitFuzzTargetPassBase;
 		void getDependentDialects(mlir::DialectRegistry& registry) const override
 		{
 			registry.insert<mlir::rlc::RLCDialect>();
@@ -419,10 +419,10 @@ namespace mlir::rlc
 			ModuleOp module = getOperation();
             mlir::IRRewriter rewriter(module->getContext());
 
-            // invoke emit_simulator on the ActionFunction with the correct unmangledName
+            // invoke emitFuzzActionFunction on the ActionFunction with the correct unmangledName
             for(auto op :module.getOps<ActionFunction>()) {
-                if(op.getUnmangledName().str() == actionToSimulate)
-				    emitSimulator(op);
+                if(op.getUnmangledName().str() == actionToFuzz)
+				    emitFuzzActionFunction(op);
 			}
 		}
 	};
