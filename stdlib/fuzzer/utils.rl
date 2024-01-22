@@ -11,3 +11,6 @@ fun fuzzer_add_available_subaction(Vector<Int> available_subactions, Int subacti
 fun fuzzer_pick_subaction(Vector<Int> available_subactions) -> Int:
     let index = fuzzer_get_input( available_subactions.size())
     return available_subactions.get(index)
+
+fun fuzzer_clear_available_subactions(Vector<Int> available_subactions):
+    available_subactions.clear()

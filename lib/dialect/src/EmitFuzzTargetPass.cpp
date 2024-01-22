@@ -39,17 +39,12 @@ static mlir::Value findFunction(mlir::ModuleOp module, llvm::StringRef functionN
     let actionEntity = action()
     TODO handle action function arguments.
 */
-static mlir::rlc::DeclarationStatement emitActionEntityDeclaration(
+static mlir::Value emitActionEntityDeclaration(
         mlir::rlc::ActionFunction action,
         mlir::rlc::FunctionOp fuzzActionFunction,
         mlir::OpBuilder builder
 ) {
     auto ip = builder.saveInsertionPoint();
-    auto declaration = builder.create<mlir::rlc::DeclarationStatement>(
-        fuzzActionFunction->getLoc(),
-        action.getEntityType(),
-        llvm::StringRef("actionEntity"));
-    builder.createBlock(&declaration.getBody());
 
     auto call = builder.create<mlir::rlc::CallOp>(
         fuzzActionFunction->getLoc(),
@@ -58,9 +53,8 @@ static mlir::rlc::DeclarationStatement emitActionEntityDeclaration(
         true,
         mlir::ValueRange({}) // TODO Assuming the action has no args for now.
     );
-    builder.create<mlir::rlc::Yield>(fuzzActionFunction->getLoc(), call.getResult(0));
     builder.restoreInsertionPoint(ip);
-    return declaration;
+    return call->getResult(0);
 }
 
 /*
@@ -116,28 +110,23 @@ static void emitLoopCondition(
 static mlir::Value emitChosenActionDeclaration(
     mlir::rlc::ActionFunction action,
     mlir::Value actionEntity,
+    mlir::Value availableSubactionsVector,
     mlir::rlc::ModuleBuilder &moduleBuilder,
     mlir::OpBuilder builder
 ) {
     auto ip = builder.saveInsertionPoint();
 
-    auto initAvailableSubactions = findFunction(action->getParentOfType<mlir::ModuleOp>(), "fuzzer_init_available_subactions");
+    auto clearAvailableSubactions = findFunction(action->getParentOfType<mlir::ModuleOp>(), "fuzzer_clear_available_subactions");
     auto addAvailableSubaction = findFunction(action->getParentOfType<mlir::ModuleOp>(), "fuzzer_add_available_subaction");
     auto pickSubaction = findFunction(action->getParentOfType<mlir::ModuleOp>(), "fuzzer_pick_subaction");
 
-    // let availableSubactions = Vector<Int>
-    auto intVectorType = mlir::rlc::EntityType::getIdentified(
-        builder.getContext(),
-        "Vector",
-        {mlir::rlc::IntegerType::getInt64(builder.getContext())}
-    );
-
-    auto availableSubactions = builder.create<mlir::rlc::CallOp>(
+    // availableSubactions.clear()
+    builder.create<mlir::rlc::CallOp>(
         action->getLoc(),
-        initAvailableSubactions,
+        clearAvailableSubactions,
         false,
-        mlir::ValueRange({})
-    )->getResult(0);
+        mlir::ValueRange({availableSubactionsVector})
+    );
 
     // for each subaction,
     //      if(subAction.resumptionIndex == actionEntity.resumptionIndex)
@@ -171,7 +160,7 @@ static mlir::Value emitChosenActionDeclaration(
             action->getLoc(),
             addAvailableSubaction,
             false,
-            mlir::ValueRange{availableSubactions, subactionIndex.getResult()}
+            mlir::ValueRange{availableSubactionsVector, subactionIndex.getResult()}
         );
         builder.create<mlir::rlc::Yield>(action->getLoc());
 
@@ -188,7 +177,7 @@ static mlir::Value emitChosenActionDeclaration(
         action->getLoc(),
         pickSubaction,
         false,
-        mlir::ValueRange{availableSubactions}
+        mlir::ValueRange{availableSubactionsVector}
     )->getResult(0);
 
     builder.restoreInsertionPoint(ip);
@@ -278,7 +267,8 @@ static llvm::SmallVector<mlir::Value, 2> emitSubactionArgumentDeclarations(
 }
 
 /*
-    For each subaction, emits the block:
+    For each subaction, emits the statements:
+    if(chosenAction == SUBACTION_INDEX)
     {
         let arg1 = pickArgument(arg_1_size)
         let arg2 = pickArgument(arg_2_size)
@@ -289,10 +279,11 @@ static llvm::SmallVector<mlir::Value, 2> emitSubactionArgumentDeclarations(
             subaction_function(actionEntity, arg1, arg2, ...)
     }
 */
-static llvm::SmallVector<mlir::Block*, 4> emitSubactionBlocks(
+static void emitSubactionCases(
     mlir::rlc::ActionFunction action,
     mlir::Region *parentRegion,
     mlir::Value actionEntity,
+    mlir::Value chosenAction,
     mlir::Value stopFlag,
     mlir::rlc::ModuleBuilder &moduleBuilder,
     mlir::OpBuilder builder
@@ -302,49 +293,62 @@ static llvm::SmallVector<mlir::Block*, 4> emitSubactionBlocks(
     auto print = findFunction(action->getParentOfType<mlir::ModuleOp>(),"fuzzer_print");
     auto skipFuzzInput = findFunction(action->getParentOfType<mlir::ModuleOp>(),"fuzzer_skip_input");
     
+    for(auto subaction : llvm::enumerate(action.getActions())) {
+        auto ifActionIsChosen = builder.create<mlir::rlc::IfStatement>(action->getLoc());
 
-    llvm::SmallVector<mlir::Block*, 4> result;
-    for(auto subaction : action.getActions()) {
-        auto *caseBlock = builder.createBlock(parentRegion);
-        result.emplace_back(caseBlock);
-        auto args = emitSubactionArgumentDeclarations(subaction, actionEntity, pickArgument, print, action->getLoc(), builder, moduleBuilder);
+        // if chosenAction == i:
+        builder.createBlock(&ifActionIsChosen.getCondition());
+        auto subactionIndex = builder.create<mlir::rlc::Constant>(action.getLoc(), (int64_t)subaction.index());
+        auto eq = builder.create<mlir::rlc::EqualOp>(action->getLoc(), subactionIndex.getResult(), chosenAction);
+        builder.create<mlir::rlc::Yield>(action.getLoc(), eq.getResult());
+
+        //      let arg1 = pickArgument(arg_1_size)
+        //      ...
+        builder.createBlock(&ifActionIsChosen.getTrueBranch());
+        auto args = emitSubactionArgumentDeclarations(subaction.value(), actionEntity, pickArgument, print, action->getLoc(), builder, moduleBuilder);
         args.insert(args.begin(), actionEntity); // the first argument should be the entity itself.
 
-        auto ifStatement = builder.create<mlir::rlc::IfStatement>(action->getLoc());
-        builder.createBlock(&ifStatement.getCondition());
-        auto can = builder.create<mlir::rlc::CanOp>(action->getLoc(), subaction);
+        //      if( !can_subaction_function(arg1, arg2, ...))
+        auto ifInputIsInvalid = builder.create<mlir::rlc::IfStatement>(action->getLoc());
+        builder.createBlock(&ifInputIsInvalid.getCondition());
+        auto can = builder.create<mlir::rlc::CanOp>(action->getLoc(), subaction.value());
         auto can_call = builder.create<mlir::rlc::CallOp>(action->getLoc(), can.getResult(), false, args);
         auto neg = builder.create<mlir::rlc::NotOp>(action->getLoc(), can_call->getResult(0));
         builder.create<mlir::rlc::Yield>(action -> getLoc(), neg.getResult());
-
-        builder.createBlock(&ifStatement.getTrueBranch());
+        //          stop = true      
+        builder.createBlock(&ifInputIsInvalid.getTrueBranch());
         builder.create<mlir::rlc::CallOp>(action->getLoc(), skipFuzzInput, false, mlir::ValueRange({}));
         auto t = builder.create<mlir::rlc::Constant>(action.getLoc(), true);
         builder.create<mlir::rlc::AssignOp>(action.getLoc(), stopFlag, t.getResult());
         builder.create<mlir::rlc::Yield>(action->getLoc());
-
-        auto *falseBranch = builder.createBlock(&ifStatement.getElseBranch());
+        //      else 
+        //          subaction_function(actionEntity, arg1, arg2, ...)
+        auto *falseBranch = builder.createBlock(&ifInputIsInvalid.getElseBranch());
         builder.create<mlir::rlc::CallOp>(
             action.getLoc(),
-            subaction,
+            subaction.value(),
             false,
             args
         );
         builder.create<mlir::rlc::Yield>(action->getLoc());
 
-        builder.setInsertionPointAfter(ifStatement);
-        builder.create<mlir::rlc::Yield>(ifStatement.getLoc());
+        builder.createBlock(&ifActionIsChosen.getElseBranch());
+        builder.create<mlir::rlc::Yield>(action->getLoc());
+
+        builder.setInsertionPointAfter(ifInputIsInvalid);
+        builder.create<mlir::rlc::Yield>(action.getLoc());
+        builder.setInsertionPointAfter(ifActionIsChosen);
     }
     builder.restoreInsertionPoint(ip);
-    return result;
 }
 
 /*
     fun fuzzer_fuzz_action_function():
         let actionEntity = play()
         let stop = false
+        let availableSubactions = Vector<Int>
         while not is_done_action(actionEntity) and not stop and isInputLongEnough():
-            let availableSubactions = Vector<Int>
+            availableSubactions.clear()
             if(subAction0.resumptionIndex == actionEntity.resumptionIndex)
                 availableSubactions.push(0)
             if(subAction1.resumptionIndex == actionEntity.resumptionIndex)
@@ -381,22 +385,32 @@ static void emitFuzzActionFunction(mlir::rlc::ActionFunction action) {
 
     auto entityDeclaration = emitActionEntityDeclaration(action, fuzzActionFunction, builder);
 
-    auto stopFlag = builder.create<mlir::rlc::DeclarationStatement>(
+    auto stopFlag = builder.create<mlir::rlc::ConstructOp>(
         fuzzActionFunction->getLoc(),
-        mlir::rlc::BoolType::get(builder.getContext()),
-        llvm::StringRef("stop"));
-    builder.createBlock(&stopFlag.getBody());
+        mlir::rlc::BoolType::get(builder.getContext()));
     auto f = builder.create<mlir::rlc::Constant>(fuzzActionFunction->getLoc(), false);
-    builder.create<mlir::rlc::Yield>(fuzzActionFunction.getLoc(), f.getResult());
-    builder.setInsertionPointAfter(stopFlag);
+
+    // let availableSubactions = Vector<Int>
+    auto intVectorType = mlir::rlc::EntityType::getIdentified(
+        builder.getContext(),
+        "Vector",
+        {mlir::rlc::IntegerType::getInt64(builder.getContext())}
+    );
+    auto initAvailableSubactions = findFunction(action->getParentOfType<mlir::ModuleOp>(), "fuzzer_init_available_subactions");
+    auto availableSubactions = builder.create<mlir::rlc::CallOp>(
+        action->getLoc(),
+        initAvailableSubactions,
+        false,
+        mlir::ValueRange({})
+    )->getResult(0);
 
     auto whileStmt = builder.create<mlir::rlc::WhileStatement>(loc);
-    emitLoopCondition(action, &whileStmt.getCondition(), entityDeclaration.getResult(), stopFlag.getResult(), builder);
+    emitLoopCondition(action, &whileStmt.getCondition(), entityDeclaration, stopFlag.getResult(), builder);
     builder.createBlock(&whileStmt.getBody());
-    auto chosenAction = emitChosenActionDeclaration(action, entityDeclaration.getResult(), moduleBuilder, builder);
-    auto blocks = emitSubactionBlocks(action, &whileStmt.getBody(), entityDeclaration.getResult(), stopFlag.getResult(), moduleBuilder, builder);
-    builder.create<mlir::rlc::SelectBranch>(loc, chosenAction, blocks);
-   
+    auto chosenAction = emitChosenActionDeclaration(action, entityDeclaration, availableSubactions, moduleBuilder, builder);
+    emitSubactionCases(action, &whileStmt.getBody(), entityDeclaration, chosenAction, stopFlag.getResult(), moduleBuilder, builder);
+    builder.create<mlir::rlc::Yield>(loc);
+    
     builder.setInsertionPointAfter(whileStmt);
     builder.create<mlir::rlc::Yield>(loc);
 }
