@@ -389,6 +389,7 @@ static void emitFuzzActionFunction(mlir::rlc::ActionFunction action) {
         fuzzActionFunction->getLoc(),
         mlir::rlc::BoolType::get(builder.getContext()));
     auto f = builder.create<mlir::rlc::Constant>(fuzzActionFunction->getLoc(), false);
+    builder.create<mlir::rlc::AssignOp>(loc, stopFlag, f);
 
     // let availableSubactions = Vector<Int>
     auto intVectorType = mlir::rlc::EntityType::getIdentified(

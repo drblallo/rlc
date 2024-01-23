@@ -44,8 +44,8 @@ extern "C" void rl_fuzzer_get_input__int64_t_r_int64_t(__int64_t *result, const 
 
 extern "C" void rl_fuzzer_pick_argument__int64_t_int64_t_r_int64_t(__int64_t *result, const __int64_t *min, __int64_t *max) {
     // printf("Picking an integer argument in range [%ld, %ld]\n", *min, *max);
-    int num_bits = ceil(log2(*max - *min));
-    *result = std::abs(consume_bits(fuzz_input, num_bits, byte_offset, bit_offset)) % (*max - *min) + *min;
+    int num_bits = ceil(log2(*max - *min + 1));
+    *result = std::abs(consume_bits(fuzz_input, num_bits, byte_offset, bit_offset)) % (*max - *min + 1) + *min;
 }
 
 extern "C" void rl_fuzzer_is_input_long_enough__r_bool(__int8_t *result) {
@@ -67,7 +67,6 @@ extern "C" int LLVMFuzzerTestOneInput(const char *Data, size_t Size) {
     bit_offset = 0;
     fuzz_input = Data;
     fuzz_input_length = Size;
-
     
     rl_fuzzer_fuzz_action_function_();
     return 0;
