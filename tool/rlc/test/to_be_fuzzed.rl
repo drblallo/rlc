@@ -1,5 +1,5 @@
 # RUN: rlc %s -o %t -i %stdlib --fuzzer
-# RUN: %t
+# RUN: %t -runs=1000
 import fuzzer.cpp_functions
 import fuzzer.utils
 
@@ -7,7 +7,7 @@ fun crash_on_five(Int input) -> Int {input != 5}:
 	return 0
 
 act play() -> Play:
-	let current = 0
+	frm current = 0
 	while current != 7:
 	    act subact(Int x) {x > 5, x < 15}
 	    current = x
@@ -20,4 +20,5 @@ act play() -> Play:
 	    
 	    act subact(Int x) {x > -12, x < 3}
 
-
+fun main() -> Int:
+	return 0
