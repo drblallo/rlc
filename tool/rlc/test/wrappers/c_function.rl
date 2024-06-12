@@ -4,7 +4,7 @@
 
 # RUN: rlc %t/source.rl -o %t/header.h -i %stdlib --header
 # RUN: clang %t/to_run.c %t/lib.so -o %t/result
-# RUN: %t/result
+# RUN: %t%exeext/result
 
 # RUN: rlc %t/source.rl -o %t/wrapper.py -i %stdlib --python
 # RUN: python %t/to_run.py 

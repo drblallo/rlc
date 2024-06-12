@@ -297,6 +297,7 @@ static int linkLibraries(
 	argSource.push_back("clang");
 	argSource.push_back(library.getFilename().str());
 	argSource.push_back("-fuse-ld=lld");
+	argSource.push_back("-v");
 	argSource.push_back("-o");
 	argSource.push_back(outputFile.str() + ".exe");
 	if (shared)

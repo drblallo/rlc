@@ -29,7 +29,7 @@ endmacro(rlcInstall)
 ##############################
 ###    addLibraryMacro     ###
 ##############################
-macro(rlcAddLibrary target)
+macro(rlcAddLibraryNoTest target)
 add_library(${target} ${ARGN})
 
 add_library(rlc::${target} ALIAS ${target})
@@ -50,6 +50,10 @@ target_compile_definitions(${target} PUBLIC ${LLVM_DEFINITIONS})
 
 rlcInstall(${target})
 
+endmacro(rlcAddLibraryNoTest)
+
+macro(rlcAddLibrary target)
+rlcAddLibraryNoTest(${target} ${ARGN})
 if (EXISTS ${CMAKE_CURRENT_SOURCE_DIR}/test)
 	add_subdirectory(test)
 endif()
