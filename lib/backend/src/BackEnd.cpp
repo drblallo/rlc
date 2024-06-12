@@ -296,18 +296,15 @@ static int linkLibraries(
 	llvm::SmallVector<std::string, 4> argSource;
 	argSource.push_back("clang");
 	argSource.push_back(library.getFilename().str());
+	argSource.push_back("-fuse-ld=lld");
 	argSource.push_back("-o");
-	argSource.push_back(outputFile.str());
-	if (not macOS)
-		argSource.push_back("-lm");
+	argSource.push_back(outputFile.str() + ".exe");
 	if (shared)
 	{
 		argSource.push_back("--shared");
-		argSource.push_back("-fPIE");
 	}
 	else
 	{
-		argSource.push_back("-no-pie");
 	}
 	if (emitSanitizerInstrumentation or linkAgainstFuzzer)
 	{
@@ -321,8 +318,6 @@ static int linkLibraries(
 		argSource.push_back(arg);
 	}
 
-	for (auto rpathEntry : rpaths)
-		argSource.push_back("-Wl,-rpath," + rpathEntry);
 
 	for (auto extraObject : extraObjectFiles)
 		argSource.push_back(extraObject);
@@ -369,7 +364,7 @@ namespace mlir::rlc
 			error_code errorCompile;
 			std::string realOut = outputFile;
 			if (realOut != "-")
-				realOut = compileOnly ? outputFile : outputFile + ".o";
+				realOut = compileOnly ? outputFile : outputFile + ".obj";
 			llvm::ToolOutputFile library(
 					realOut, errorCompile, llvm::sys::fs::OpenFlags::OF_None);
 

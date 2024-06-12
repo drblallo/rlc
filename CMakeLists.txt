@@ -14,11 +14,17 @@ SET(gtest_disable_pthreads OFF CACHE INTERNAL "")
 SET(gtest_hide_internal_symbols OFF CACHE INTERNAL "")
 SET(gtest_force_shared_crt OFF CACHE INTERNAL "")
 SET(GTEST_HAS_ABSL OFF CACHE INTERNAL "")
+SET(GTEST_HAS_RTTI OFF CACHE INTERNAL "")
+SET(GTEST_INTERNAL_HAS_ANY OFF CACHE INTERNAL "")
+SET(GTEST_LINKED_AS_SHARED_LIBRARY OFF CACHE INTERNAL "")
+SET(gtest_force_shared_crt ON CACHE INTERNAL "")
 
 add_subdirectory(googletest)
 #set (CMAKE_CXX_FLAGS_DEBUG "${CMAKE_CXX_FLAGS_DEBUG} -fno-omit-frame-pointer -fsanitize=undefined -fsanitize=memory -fsanitize-ignorelist=/home/massimo/Documents/example_rlc/rlc-infrastructure/rlc-debug/ignorelist.txt -fsanitize-recover=all")
 #set (CMAKE_LINKER_FLAGS_DEBUG "${CMAKE_LINKER_FLAGS_DEBUG} -fno-omit-frame-pointer -fsanitize=undefined")
+set (CMAKE_LINKER_FLAGS "${CMAKE_LINKER_FLAGS} -stdlib=libc++")
 #set (CMAKE_CXX_FLAGS "-fsanitize=fuzzer-no-link -O1 -g")
+set(BUILD_SHARED_LIBS OFF)
 ##############################
 ###        benchmarks      ###
 ##############################
@@ -39,7 +45,6 @@ SET(BENCHMARK_FORCE_WERROR OFF CACHE INTERNAL "")
 SET(BENCHMARK_ENABLE_WERROR ON CACHE INTERNAL "")
 SET(BENCHMARK_USE_BUNDLED_GTEST CACHE INTERNAL "")
 
-add_subdirectory(benchmark)
 
 ##############################
 ###        Project         ###
@@ -50,18 +55,20 @@ enable_testing()
 include("CPack")
 include(CTest)
 set(CMAKE_DEBUG_POSTFIX "-d")
+set(CXX_STANDARD 20)
 
 ##############################
 ###        Globals         ###
 ##############################
 set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -fno-exceptions")
 set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -fno-rtti")
-set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Werror")
+set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wno-error")
 set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wall -Wextra")
 set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wno-unused-variable -Wno-unused-parameter -Wno-comment -Wno-unused-function -Wno-deprecated-this-capture")
-set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wno-implicit-int-float-conversion")
+set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wno-implicit-int-float-conversion -Wno-reserved-macro-identifier -Wno-c++98-compat -Wno-c++98-compat-pedantic -Wno-old-style-cast -Wno-sign-conversion -Wshadow-field-in-constructor -Wno-language-extension-token")
 
 set(CMAKE_INSTALL_RPATH "$ORIGIN/../lib")
+set(EXEEXT ${CMAKE_EXECUTABLE_SUFFIX})
 
 set_tests_properties(${noArgsTests} PROPERTIES TIMEOUT 10)
 include(macros.cmake)

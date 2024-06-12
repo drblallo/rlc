@@ -299,7 +299,7 @@ static mlir::rlc::Driver configureDriver(
 	using namespace mlir::rlc;
 	auto pathToRlc = llvm::sys::fs::getMainExecutable(argv[0], (void *) &main);
 	auto rlcDirectory =
-			llvm::sys::path::parent_path(pathToRlc).str() + "/../lib/rlc/stdlib";
+			llvm::sys::path::parent_path(pathToRlc).str() + "\\..\\lib\\rlc\\stdlib";
 	llvm::SmallVector<std::string, 4> includes(
 			IncludeDirs.begin(), IncludeDirs.end());
 	auto directory = llvm::sys::path::parent_path(InputFilePath);
@@ -310,7 +310,7 @@ static mlir::rlc::Driver configureDriver(
 	{
 		string fuzzerLibPath = customFuzzerLibPath.empty()
 															 ? llvm::sys::path::parent_path(pathToRlc).str() +
-																		 "/../lib/" + FUZZER_LIBRARY_FILENAME
+																		 "\\..\\lib\\" + FUZZER_LIBRARY_FILENAME
 															 : customFuzzerLibPath.getValue();
 
 		ExtraObjectFiles.addValue(fuzzerLibPath);
@@ -325,7 +325,7 @@ static mlir::rlc::Driver configureDriver(
 			runtimeLibPath = *envVal;
 		else
 			runtimeLibPath = llvm::sys::path::parent_path(pathToRlc).str() +
-											 "/../lib/" + RUNTIME_LIBRARY_FILENAME;
+											 "\\..\\lib\\" + RUNTIME_LIBRARY_FILENAME;
 	}
 	ExtraObjectFiles.addValue(runtimeLibPath);
 
