@@ -138,7 +138,7 @@ static void runOptimizer(
 		functionPassManager.addPass(llvm::PromotePass());
 		passManager.addPass(
 				createModuleToFunctionPassAdaptor(std::move(functionPassManager)));
-		if (emitSanitizerInstrumentation)
+		if (emitSanitizerInstrumentation and false)
 			addFuzzerInstrumentationPass(passManager);
 		passManager.run(M, MAM);
 
@@ -159,7 +159,7 @@ static void runOptimizer(
 	{
 		ModulePassManager MPM =
 				PB.buildO0DefaultPipeline(OptimizationLevel::O0, true);
-		if (emitSanitizerInstrumentation)
+		if (emitSanitizerInstrumentation and false)
 			addFuzzerInstrumentationPass(MPM);
 		MPM.run(M, MAM);
 	}
@@ -297,17 +297,18 @@ static int linkLibraries(
 	argSource.push_back("clang");
 	argSource.push_back(library.getFilename().str());
 	argSource.push_back("-fuse-ld=lld");
-	argSource.push_back("-v");
+	argSource.push_back("-Wl,-subsystem:console");
 	argSource.push_back("-o");
-	argSource.push_back(outputFile.str() + ".exe");
-	if (shared)
+	if (!shared)
 	{
-		argSource.push_back("--shared");
+		argSource.push_back(outputFile.str() + ".exe");
 	}
 	else
 	{
+		argSource.push_back(outputFile.str()+ ".dll");
+		argSource.push_back("--shared");
 	}
-	if (emitSanitizerInstrumentation or linkAgainstFuzzer)
+	if ((emitSanitizerInstrumentation or linkAgainstFuzzer) and false)
 	{
 		std::string arg("-fsanitize=");
 		if (emitSanitizerInstrumentation)
@@ -317,6 +318,8 @@ static int linkLibraries(
 		if (linkAgainstFuzzer)
 			arg += "fuzzer";
 		argSource.push_back(arg);
+	        argSource.push_back("-Wl,/NODEFAULTLIB:libcmt");
+	        argSource.push_back("-Wl,-defaultlib:msvcrt");
 	}
 
 
@@ -378,6 +381,7 @@ namespace mlir::rlc
 			}
 
 			compile(*targetInfo, std::move(Module), library.os());
+			library.os().close();
 
 			if (compileOnly)
 			{
