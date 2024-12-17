@@ -14,13 +14,6 @@ INSTALL(EXPORT ${target}Targets DESTINATION ${CMAKE_INSTALL_LIBDIR}/cmake/${CMAK
 	FILE ${target}Targets.cmake
 	NAMESPACE rlc::)
 
-include(CMakePackageConfigHelpers)
-write_basic_package_version_file(${target}ConfigVersion.cmake
-	VERSION ${example_VERSION}
-	COMPATIBILITY SameMajorVersion)
-
-INSTALL(FILES ${target}Config.cmake ${CMAKE_CURRENT_BINARY_DIR}/${target}ConfigVersion.cmake
-	DESTINATION ${CMAKE_INSTALL_LIBDIR}/cmake/${CMAKE_PROJECT_NAME})
 
 install(DIRECTORY include/ DESTINATION ${CMAKE_INSTALL_INCLUDEDIR})
 

@@ -1,13 +1,4 @@
-torch
-torchviz
+torch==2.5.0
 numpy < 2.0.0
-ray[data,train,tune,serve]==2.30.0
-hyperopt
-gymnasium
-dm_tree
-typer
-scikit-image
-lz4
 tensorboard
-fpdf
 matplotlib
