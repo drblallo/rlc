@@ -171,9 +171,6 @@ cls<T> Vector:
             counter = counter + 1
         self.pop()  
 
-    fun size() -> Int:
-        return self._size
-
 # A bounded vector is a wrapper
 # around a vector that prevents 
 # the size of the vector to ever 

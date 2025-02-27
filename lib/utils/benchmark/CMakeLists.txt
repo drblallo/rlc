@@ -12,7 +12,7 @@ macro(makeDataStructureBenchmark name file)
         OUTPUT ${CMAKE_CURRENT_BINARY_DIR}/${name}.h
         COMMAND rlc::rlc ${INS} -o ${CMAKE_CURRENT_BINARY_DIR}/${name}.h --header -O2 -i ${CMAKE_SOURCE_DIR}/stdlib
         DEPENDS rlc::rlc ${INS})
-    add_custom_target(${name}_lib ALL DEPENDS 
+    add_custom_target(${name}_lib ALL DEPENDS
         ${CMAKE_CURRENT_BINARY_DIR}/${name}${CMAKE_STATIC_LIBRARY_SUFFIX} ${CMAKE_CURRENT_BINARY_DIR}/${name}.h)
 
     rlcAddBenchmark(${name} ${CMAKE_CURRENT_BINARY_DIR}/${name}${CMAKE_STATIC_LIBRARY_SUFFIX} rlc::runtime)
