@@ -144,7 +144,7 @@ Notice that rlc-lsp must be in PATH, so if you are using the PIP package of rule
 `vscode` has a plugin available in the plugin store called `rl-lsp` and `rl-language` that enables autocomplete and syntax highlighting.
 
 ### VIM with YouCompleteMe
-On `vim`, if you use `YouCompleteMe` you can get access to automplete by adding the followings to your .vimrc file.
+On `vim`, if you use `YouCompleteMe` you can get access to automplete by adding the following to your .vimrc file.
 
 ```
 au BufRead,BufNewFile *.rl set filetype=rl
@@ -176,7 +176,7 @@ This program is only available in a pip installation.
 
 rlc-random runs random actions on a program with a finite amount of actions, and does until it reaches the end of the program. It prints the selected actions.
 
-This tool is usefull as a command line utility to quickly test a interactive program, or to produce a trace usefull to some other program.
+This tool is useful as a command line utility to quickly test a interactive program, or to produce a trace useful to some other program.
 
 To be usable with rlc-random, a program just requires that to have a entry point with the following signature `act play() -> Game`, and that all `action statements` that appear in `play` are enumerable.
 
@@ -184,7 +184,7 @@ This program is only available in a pip installation.
 
 ## rlc-learn
 
-rlc-learn uses a off-the-shelf implmentation of PPO to maximize some metric in a given Rulebook program. This tool is intended to be used to perform sanity checks by those that wish to roll out their own machine learning algorithm, or by those that do not have knowledge of reinforcement learning and wish to use a acceptable off-the-shelf implementation. A basic tutorial is shown [here](./tutorial.md).
+rlc-learn uses an off-the-shelf implementation of PPO to maximize some metric in a given Rulebook program. This tool is intended to be used to perform sanity checks by those that wish to roll out their own machine learning algorithm, or by those that do not have knowledge of reinforcement learning and wish to use an acceptable off-the-shelf implementation. A basic tutorial is shown [here](./tutorial.md).
 
 The command accepts a number of options controlling how the program is
 compiled and how the training loop behaves.  All options from
@@ -277,7 +277,7 @@ This program is only available in a pip installation.
 
 ## rlc-action
 
-Applies a execution trace to a rulebook program, and then prints the final result. This tool is usefull to check if a trace is valid, if the traced program is correct.
+Applies a execution trace to a rulebook program, and then prints the final result. This tool is useful to check if a trace is valid, if the traced program is correct.
 
 The command accepts the standard compilation flags exposed by
 `make_rlc_argparse` together with a few options controlling how the trace is
@@ -312,7 +312,7 @@ This program is only available in a pip installation.
 
 ## Tools for compiler people
 
-This section of the document talks about the internal components of RLC, and is meant for compiler developers, not users of the language. If you are confused about what this means and you are wondering if this section is for your, it is not, altough you can still read it if you are interested in knowing what goes on under rlc hood.
+This section of the document talks about the internal components of RLC, and is meant for compiler developers, not users of the language. If you are confused about what this means and you are wondering if this section is for your, it is not, although you can still read it if you are interested in knowing what goes on under rlc hood.
 
 ## RLC internals
 
@@ -377,7 +377,7 @@ The parser is a recursive descent handwritten parser, the parser takes the token
 
 
 ### Unchecked AST
-Before typechecking the AST of the language is unchecked, it means that almost every non trivial operation is marked as having unkown type.
+Before typechecking the AST of the language is unchecked, it means that almost every non trivial operation is marked as having unknown type.
 
 You can see the token stream with `rlc --unchecked file.rl`
 
@@ -425,7 +425,7 @@ You can see the token stream with `rlc --ir file.rl` to see the LLVM ir. You can
 
 ### Making IR more readable
 
-When priting the RLC IR you can pass `--hide-positions` and `--hide-dl` to omit the module data layout and the module debug positions. That makes the IR slightly more readable.
+When printing the RLC IR you can pass `--hide-positions` and `--hide-dl` to omit the module data layout and the module debug positions. That makes the IR slightly more readable.
 
 ### MLIR
 
@@ -439,7 +439,7 @@ In practice what we get out MLIR is:
 * the textual serializers for MLIR
 * mlir-opt which runs single passes of mlir
 * some basic type interfaces
-* MLIR dataflow analisys
+* MLIR dataflow analysis
 
 ### Running single RLC passes
 
