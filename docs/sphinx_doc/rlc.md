@@ -184,7 +184,7 @@ This program is only available in a pip installation.
 
 ## rlc-learn
 
-rlc-learn uses a off-the-shelf implmentation of PPO to maximize some metric in a given Rulebook program. This tool is intended to be used to perform sanity checks by those that wish to roll out their own machine learning algorithm, or by those that do not have knowledge of reinforcement learning and wish to use a acceptable off-the-shelf implementation. A basic tutorial is shown [here](./tutorial.md).
+rlc-learn uses an off-the-shelf implementation of PPO to maximize some metric in a given Rulebook program. This tool is intended to be used to perform sanity checks by those that wish to roll out their own machine learning algorithm, or by those that do not have knowledge of reinforcement learning and wish to use an acceptable off-the-shelf implementation. A basic tutorial is shown [here](./tutorial.md).
 
 The command accepts a number of options controlling how the program is
 compiled and how the training loop behaves.  All options from

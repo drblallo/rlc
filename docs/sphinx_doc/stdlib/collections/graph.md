@@ -18,8 +18,8 @@
 - **Function**: `add_edge(Node<NodeLabel, EdgeLabel> other, EdgeLabel label) `
 - **Function**: `get_outgoing(Int index)  -> ref Edge<EdgeLabel>`
 - **Function**: `get_size_outgoing()  -> Int`
-- **Function**: `get_size_incomming()  -> Int`
-- **Function**: `get_incomming(Int index)  -> Int`
+- **Function**: `get_size_incoming()  -> Int`
+- **Function**: `get_incoming(Int index)  -> Int`
 - **Function**: `get_label()  -> ref NodeLabel`
 - **Function**: `get_id()  -> Int`
 
@@ -32,7 +32,7 @@
 - **Function**: `add_node() `
 - **Function**: `remove_edge(Node<NodeLabel, EdgeLabel> node, Int edge_id) `
 - **Function**: `erase_outgoing_edges(Node<NodeLabel, EdgeLabel> n) `
-- **Function**: `erase_incomming_edges(Node<NodeLabel, EdgeLabel> n) `
+- **Function**: `erase_incoming_edges(Node<NodeLabel, EdgeLabel> n) `
 - **Function**: `remove_node(Node<NodeLabel, EdgeLabel> n) `
 - **Function**: `get_node(Int node_id)  -> ref Node<NodeLabel, EdgeLabel>`
 - **Function**: `get_nodes_size()  -> Int`

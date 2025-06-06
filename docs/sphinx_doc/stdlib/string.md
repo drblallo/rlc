@@ -50,7 +50,7 @@
 - **Function**: `count(Byte b)  -> Int`
 
 ```text
- returns the number of occurences
+ returns the number of occurrences
  a certain character appears in the string
 
 ```
