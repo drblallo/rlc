@@ -117,8 +117,8 @@
  A bounded vector is a wrapper
  around a vector that prevents 
  the size of the vector to ever 
- exced `max_size`
- this class is usefull when used
+ exceed `max_size`
+ this class is useful when used
  for machine learning techniques, 
  since it allows the machine learning
  to know the maximal possible size
@@ -174,7 +174,7 @@
 ```text
  append `value` to the end
  of the vector, but only if
- doing so would not excede
+ doing so would not exceed
  max vector maximal size
 
 ```
