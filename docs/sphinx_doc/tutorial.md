@@ -53,10 +53,10 @@ rlc example.rl -o executable
 
 Now that you've ensured your system works, download the `black jack` example from [here](https://github.com/rl-language/rlc/tool/rlc/test/examples/black_jack.rl) and save it in a file in the directory we created at the start of this example.
 
-Black jack is example that shows how to handle games with randomness and imperfect information. Indeed the actions taken by the real user are usually just one or two, while most of the game is spent by the `randomness player` shuffling the deck, which is a fake player that performs actions at random.
+Blackjack is an example that shows how to handle games with randomness and imperfect information. Indeed, the actions taken by the real user are usually just one or two, while most of the game is spent by the `randomness player` shuffling the deck—a fake player that performs actions at random.
 
 
-After you have copied it, let us make sure we can run generate a random game.
+After you have copied it, let us make sure we can generate a random game.
 
 ```
 rlc-random black_jack.rl
@@ -98,7 +98,7 @@ You should see a graph that looks similar to the following:
 
 The x-axis is the number of actions played. In the case of our game, it means the number of `hits` and `stand` executed, the y-axis is instead the average score obtained. As expected the average score is increasing, that is: it is learning to play.
 
-Of course, the machine will never achieve a average score of one, because there is no guarantee you can always hit 21 points, not even if you knew the order of the cards in the deck. Furthermore, the size of the neural network has been defaulted to a reasonable size, but there is no guarantee that the problem is solvable given the default size.
+Of course, the machine will never achieve an average score of one, because there is no guarantee you can always hit 21 points—even if you knew the order of the cards in the deck. Furthermore, the size of the neural network has been defaulted to a reasonable value, but there is no guarantee that the problem is solvable given the default size.
 
 Still, with very few commands and a very simple `.rl` file, we managed to have a reasonably configured network up and learning.
 

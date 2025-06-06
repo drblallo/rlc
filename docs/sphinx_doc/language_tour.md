@@ -108,7 +108,7 @@ Let’s say you wrote a simple rock-paper-scissors game. After player 1 selects 
 enum Gesture:
     rock
     paper
-    scizor
+    scissor
 
 act play() -> Game:
     act select(frm Gesture player1)
@@ -126,7 +126,7 @@ fun main() -> Int:
     copy.select(Gesture::rock)   # you lose
 
     copy = state
-    copy.select(Gesture::scizor) # you lose
+    copy.select(Gesture::scissor) # you lose
 
     copy = state
     copy.select(Gesture::paper)  # you win
@@ -146,7 +146,7 @@ Revisiting the rock-paper-scissors example, suppose you want to read which move 
 enum Gesture:
     rock
     paper
-    scizor
+    scissor
 
 act play() -> Game:
     act select(frm Gesture player1)
