@@ -4,7 +4,7 @@
 
 
 ```text
- A Hidden object rapresents a object that is not visibile to machine
+ A Hidden object represents a object that is not visible to machine
  learning algorithms. For example a machine learning algorithms learning
  to play black jack should not have access to the deck of cards, so it can be wrapped into a hidden to achieve that effect
 

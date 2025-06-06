@@ -721,7 +721,7 @@ class RerrolableRoll {
         is_non_cp_rerollable(is_non_cp_rerollable),
         current_player(current_player) {}
     void roll(GameState& state, Dice dice) {
-        assert(can_roll(state), sate);
+        assert(can_roll(state), state);
         result = dice;
         if (suspensionPoint == 0){ // if this is the first time we roll the dice
             is_non_cp_rerollable = can_reroll or (can_reroll_1s and result == 1) // figure out if we can reroll for free
@@ -751,7 +751,7 @@ class RerrolableRoll {
     bool can_keep_it(GameState& state, Bool do_it) {
         return suspensionPoint == 1;
     }
-    struct ActionRoll { // a class that rappresents a action, in a way that can be stored and executed later
+    struct ActionRoll { // a class that rappresents an action, in a way that can be stored and executed later
         Dice roll;
         void apply(RerollableDiceRoll rollBeingResolved, GameState& state) {
            rollBeingResolved.roll(state, roll);
@@ -903,7 +903,7 @@ The rulebook libraries have been designed to expose a [finite interactive progra
 
 ## Self configuring UI
 
-One of the objective of the Rulebook is to be able to modify rules and have the UI automatically adapt to them. We achieve this using the language [action classes](./language_tour.md#action-statements-classes). Here is a example, the godot script that handles the [game board](https://github.com/rl-language/4Hammer/blob/master/scripts/boardl.gd#L22) so that whenever a action related to selecting the board is possible, the elegible locations glow yellow.
+One of the objective of the Rulebook is to be able to modify rules and have the UI automatically adapt to them. We achieve this using the language [action classes](./language_tour.md#action-statements-classes). Here is a example, the godot script that handles the [game board](https://github.com/rl-language/4Hammer/blob/master/scripts/boardl.gd#L22) so that whenever an action related to selecting the board is possible, the eligible locations glow yellow.
 
 ```godot
 # triggers after every action
@@ -924,12 +924,12 @@ func on_state_changed():
 		quads[board_position.get_x().get_value() * 100 + board_position.get_y().get_value()].visible = true
 ```
 
-The UI only can introspect valid actions, make sure that they have the expected shape of only requring a single `BoardPosition` argument, and then highlight that particular board location.
+The UI only can introspect valid actions, make sure that they have the expected shape of only requiring a single `BoardPosition` argument, and then highlight that particular board location.
 
-This meas that the rule writer can write rules such as the current implementation of moving a game piece on the board
+This means that the rule writer can write rules such as the current implementation of moving a game piece on the board
 
 ```rlc
-# core rules movement rules, including the possiblity
+# core rules movement rules, including the possibility
 # of advancing and the triggering of overwatches
 act move(ctx Board board, ctx UnitID unit, frm StatModifier additional_movement) -> Move:
     if board[unit.get()].models.size() == 0:

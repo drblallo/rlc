@@ -58,14 +58,14 @@
 - **Function**: `append(StringLiteral str) `
 
 ```text
- appens `str` to the current string
+ appends `str` to the current string
 
 ```
 
 - **Function**: `append(String str) `
 
 ```text
- appens `str` to the current string
+ appends `str` to the current string
 
 ```
 

@@ -213,7 +213,7 @@ As expected, only the three actions available to player 0 are valid at the start
 
 ## Applying actions
 
-To advance the state, there is a very simple function, `step` which accepts the index of the action to execute and returns the reward of that action, measure as the different between the score before the action has been executed and the score after the action has been executed.
+To advance the state, there is a very simple function, `step` which accepts the index of the action to execute and returns the reward of that action, measured as the difference between the score before the action has been executed and the score after the action has been executed.
 ```
 with compile(["./rockpaperscizzor.rl"]) as program:
     exit_on_invalid_env(program)

@@ -25,7 +25,7 @@
 - **Function**: `min(Int a, Int b)  -> Int`
 
 ```text
- retursn the min between two numbers
+ returns the min between two numbers
 
 ```
 
