@@ -25,7 +25,7 @@ rlc file.rl -o lib.a --compile # uses linux naming conventions
 rlc file.rl -o header.h --header
 ```
 
-Then you can use the header from C by inlcuding it, with a couple of macro definitions to specify what you want in particular from the header.
+Then you can use the header from C by including it, with a couple of macro definitions to specify what you want in particular from the header.
 ```c
 // file.c
 #include <stdint.h>
@@ -47,7 +47,7 @@ clang file.c lib.a -o executable
 ./executable
 ```
 
-Here is a example that uses the most imporant features of rlc:
+Here is a example that uses the most important features of rlc:
 ```rlc
 # file.rl
 import collections.vector
@@ -104,7 +104,7 @@ rlc /tmp/file.rl /tmp/lib.a -o /tmp/exec
 /tmp/exec # [15]
 ```
 
-This example shows most of the functinalities you may need in C, there is only one missing thing, which is how do you call C from rulebook.
+This example shows most of the functionalities you may need in C, there is only one missing thing, which is how do you call C from rulebook.
 
 ### Calling C from rulebook
 

@@ -3,7 +3,7 @@
 [Rulebook](https://github.com/rl-language/rlc) is a compiled and statically checked language.
 
 ```rlc
-# rlc hellow world
+# rlc hello world
 import serialization.print
 
 cls SimpleRegularCode:
