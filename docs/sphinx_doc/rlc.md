@@ -279,6 +279,34 @@ This program is only available in a pip installation.
 
 Applies a execution trace to a rulebook program, and then prints the final result. This tool is usefull to check if a trace is valid, if the traced program is correct.
 
+The command accepts the standard compilation flags exposed by
+`make_rlc_argparse` together with a few options controlling how the trace is
+executed.  Below is a description of every available flag:
+
+* `source_file` – path to the `.rl` source file (or a Python wrapper produced
+  with `rlc --python`) to run.
+* `action_file` – text file containing one action per line.  Use `-` to read
+  from standard input.
+* `--load`/`-l <file>` – load a previously saved binary state before applying
+  the actions.
+* `--output`/`-o <file>` – write the final state to `<file>` in binary format
+  instead of printing it on screen.
+* `--ignore-invalid`/`-ii` – skip actions that fail to parse or cannot be
+  applied rather than stopping with an error.
+* `--print-all`/`-all` – echo each line from the trace before executing it.
+* `--pretty-print`/`-pp` – pause after each action and pretty print the current
+  state, waiting for user input to continue.
+* `--show-actions`/`-a` – list all available actions defined in the program and
+  exit.
+* `--include`/`-i <dir>` – additional include directories used when compiling
+  the Rulebook program.
+* `--stdlib <dir>` – path to a custom standard library.
+* `--pyrlc <path>` – location of the Python wrapper runtime library.
+* `--rlc`/`-c <path>` – explicit path to the `rlc` compiler.
+* `--runtime`/`-rt <path>` – alternative runtime library to link against.
+* `--extra-rlc-args <args>` – extra command line arguments forwarded verbatim
+  to `rlc` during compilation.
+
 This program is only available in a pip installation.
 
 
