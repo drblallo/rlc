@@ -50,7 +50,7 @@
 - **Function**: `count(Byte b)  -> Int`
 
 ```text
- returns the number of occurences
+ returns the number of occurrences
  a certain character appears in the string
 
 ```
@@ -58,14 +58,14 @@
 - **Function**: `append(StringLiteral str) `
 
 ```text
- appens `str` to the current string
+ appends `str` to the current string
 
 ```
 
 - **Function**: `append(String str) `
 
 ```text
- appens `str` to the current string
+ appends `str` to the current string
 
 ```
 

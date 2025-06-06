@@ -1,6 +1,6 @@
 # Tutorial for RL people
 
-The `Rulebook` language is designed, among other things, to help you use reinforcement learning techniques. It does so by helping you write simulated environments in which machine learning agents can learn, without requiring the user to write any code related to machine learning, beside specificing minimal and maximal bounds of variables.
+The `Rulebook` language is designed, among other things, to help you use reinforcement learning techniques. It does so by helping you write simulated environments in which machine learning agents can learn, without requiring the user to write any code related to machine learning, beside specifying minimal and maximal bounds of variables.
 
 The `RL` language does not provide new reinforcement learning methods; instead, it concerns itself with the issue of writing simulations only. You can use any learning algorithm you wish when using an `RL` language simulation.
 
@@ -62,18 +62,18 @@ After you have copied it, let us make sure we can run generate a random game.
 rlc-random black_jack.rl
 ```
 
-You will see that it prints the actions to be executed in a game, this include the shuffling of the deck.
-You can visualize what is happeing with
+You will see that it prints the actions to be executed in a game, this includes the shuffling of the deck.
+You can visualize what is happening with
 
 ```
 rlc-random black_jack.rl -o game.log
 rlc-action black_jack.rl game.log -pp
 ```
 
-You will be able to visualize the evolution of the deck while it is being suffled, and then see which action the player will take.
+You will be able to visualize the evolution of the deck while it is being shuffled, and then see which action the player will take.
 
 
-Now that we have visualized a random game, we can start learning! Tou can run `rlc-learn` to do so:
+Now that we have visualized a random game, we can start learning! You can run `rlc-learn` to do so:
 ```bash
 rlc-learn black_jack.rl |& tee log.txt
 ```
@@ -96,7 +96,7 @@ You should see a graph that looks similar to the following:
 
 ![tensorboard example](./imgs/mean_reward.png)
 
-The x-axis is the number of actions played. In the case of our game, it means the number of `hits` and `stand` executed, the y-axis is instead the average score obtained. As exepected the average score is increasing, that is: it is learning to play.
+The x-axis is the number of actions played. In the case of our game, it means the number of `hits` and `stand` executed, the y-axis is instead the average score obtained. As expected the average score is increasing, that is: it is learning to play.
 
 Of course, the machine will never achieve a average score of one, because there is no guarantee you can always hit 21 points, not even if you knew the order of the cards in the deck. Furthermore, the size of the neural network has been defaulted to a reasonable size, but there is no guarantee that the problem is solvable given the default size.
 
@@ -130,7 +130,7 @@ import random
 # load the rl file
 program = compile(["black_jack.rl"])
 # starts a rlc program invoking the user defined play
-# function and wraps it in object for with some usefull methods
+# function and wraps it in object for with some useful methods
 state = program.start()
 
 # invokes directly the user defined function on the real state object
