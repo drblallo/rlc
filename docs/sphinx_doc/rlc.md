@@ -186,6 +186,76 @@ This program is only available in a pip installation.
 
 rlc-learn uses a off-the-shelf implmentation of PPO to maximize some metric in a given Rulebook program. This tool is intended to be used to perform sanity checks by those that wish to roll out their own machine learning algorithm, or by those that do not have knowledge of reinforcement learning and wish to use a acceptable off-the-shelf implementation. A basic tutorial is shown [here](./tutorial.md).
 
+The command accepts a number of options controlling how the program is
+compiled and how the training loop behaves.  All options from
+`make_rlc_argparse` are available together with a set of flags specific to
+reinforcement learning.  The following list explains each option in depth:
+
+* `--include`/`-i <dir>` – add `<dir>` to the search path for additional
+  `.rl` files when compiling the environment.  Use this when your Rulebook
+  program imports modules stored in other directories.  The flag may appear
+  multiple times and each directory is forwarded to the compiler.
+* `--stdlib <dir>` – path to an alternative Rulebook standard library.
+  By default the version bundled with the installed package is used.  Specify
+  this option if you maintain a custom copy of the standard library or if you
+  are experimenting with modifications.
+* `--pyrlc <path>` – location of the Python wrapper runtime library.
+  The wrapper produced by `rlc --python` depends on this support library.
+  Normally it is found automatically but installations in unusual locations may
+  require setting this path explicitly.
+* `--rlc`/`-c <path>` – path to the `rlc` compiler executable.  If the compiler
+  is not available in your `PATH`, for instance when using a development build,
+  point this flag to the desired executable so `rlc-learn` can invoke it.
+* `--runtime`/`-rt <path>` – path to a custom Rulebook runtime library to link
+  against.  Use this to train with an instrumented runtime or an experimental
+  build instead of the one shipped with the package.
+* `--extra-rlc-args <args>` – additional command line arguments forwarded
+  verbatim to `rlc`.  Any string placed here is appended to the compilation
+  command.  Typical uses include enabling optimizations (`-O2`) or runtime
+  sanitizers without modifying the learning script.
+* `--output`/`-o <file>` – file where the trained network is written.  After
+  training completes the model parameters are saved in PyTorch format at this
+  location.  The resulting file can be passed to `rlc-play` or `rlc-probs` and
+  defaults to `network` when omitted.
+* `--no-tensorboard` – do not launch the TensorBoard server.  By default
+  `rlc-learn` starts TensorBoard on port `6006` and logs reward and loss curves
+  for real‑time monitoring.  Disable it in headless or resource constrained
+  setups.
+* `--total-steps <n>` – total number of environment interactions collected
+  before training ends.  Increasing this budget allows the algorithm to gather
+  more experience and usually yields a stronger policy, albeit at the cost of
+  longer training time.
+* `--lr <value>` – learning rate used by the optimizer.  This controls the
+  step size of gradient updates and heavily influences training stability.
+  Values are typically between `1e-3` and `1e-5` depending on the environment.
+* `--entropy-coeff <value>` – weight of the entropy bonus encouraging
+  exploration.  A larger coefficient drives the agent to sample actions more
+  uniformly, helping exploration but delaying convergence if set too high.
+* `--clip-param <value>` – PPO clipping threshold.  This bounds the change in
+  action probabilities between successive updates.  Small values lead to very
+  conservative updates while larger ones allow faster but less stable learning.
+* `--league-play` – periodically save networks and pit the agent against older
+  versions to prevent forgetting.  This self-play mechanism exposes the model to
+  past behaviors so new strategies do not overwrite previously learned skills.
+* `--load <file>` – start training from the checkpoint in `<file>` rather than
+  from scratch.  Use this option to continue a previous run or fine tune an
+  existing model on a new task.
+* `--steps-per-env <n>` – number of steps collected in each environment before
+  a gradient update (default `100`).  Larger values increase the batch size used
+  for optimization and can improve stability, but they also raise memory
+  requirements.
+* `--hypersearch` – run a predefined hyperparameter search over learning rate,
+  entropy coefficient, clip parameter and the number of steps per environment.
+  Results for each configuration are stored in separate directories to simplify
+  comparison.
+* `--model-save-frequency <n>` – write a checkpoint every `<n>` iterations
+  (default `20`).  Frequent checkpoints let you inspect intermediate policies
+  or resume training after unexpected interruptions.
+* `--envs <n>` – number of parallel environments used to gather experience.
+  Each environment runs in its own process and contributes samples
+  simultaneously.  Higher values speed up data collection but demand more CPU
+  time and memory.
+
 This program is only available in a pip installation.
 
 ## rlc-play
