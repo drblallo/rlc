@@ -151,9 +151,9 @@ rlc /tmp/file.rl -o /tmp/exec /tmp/lib.a
 
 ## Interop with CPP
 
-The interop with cpp is identical to the one with C, except the generated header detects cpp is available so it will remove the need for manual managment of constructors and destructors.
+The interop with cpp is identical to the one with C, except the generated header detects cpp is available so it will remove the need for manual management of constructors and destructors.
 
-Let us revisig the previous example in cpp.
+Let us revisit the previous example in cpp.
 
 ```rlc
 # file.rl
@@ -310,11 +310,11 @@ Our large example [4Hammer](./4hammer.md) shows interop with godot and cmake.
 
 ## Interop with unreal
 
-Unfortunatelly there is no way for a unreal engine plugin to hook inside the the build system of unreal. We have no way to package Rulebook in a way that can be hot reloaded from Unreal without the unreal programmer providing some code themselves. For unreal you have to start from the CPP interop and build from there.
+Unfortunately there is no way for an Unreal engine plugin to hook into the build system of Unreal. We have no way to package Rulebook in a way that can be hot reloaded from Unreal without the Unreal programmer providing some code themselves. For Unreal you have to start from the CPP interop and build from there.
 
 ## CMake
 
-We expose typical actions one my wish to perform from cmake as a cmake config file. This includes correct managment of imported files in rulebook for incremental builds, the various wrappers generators and so on. You can see examples in the [godot plugin cmake file](https://github.com/rl-language/4Hammer/blob/master/CMakeLists.txt) of 4hammer.
+We expose typical actions one may wish to perform from CMake as a CMake config file. This includes correct management of imported files in Rulebook for incremental builds, the various wrapper generators and so on. You can see examples in the [godot plugin CMake file](https://github.com/rl-language/4Hammer/blob/master/CMakeLists.txt) of 4hammer.
 
 ## Cross compiling
 
