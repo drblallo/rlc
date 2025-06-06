@@ -4,10 +4,10 @@
 
 
 ```text
- A memory contiguous datastructure similar to cpp vector.
- A vector is a list of elements. Just like cpp vector,
- the contents may be reallocated when added or deleated,
- so references elements are invalidated if the 
+ A contiguous data structure similar to a C++ vector.
+ A vector is a list of elements. Just like a C++ vector,
+ the contents may be reallocated when elements are added or deleted,
+ so references to elements are invalidated if the 
  vector is modified.
 
 ```
@@ -172,11 +172,11 @@
 - **Function**: `append(T value) `
 
 ```text
- append `value` to the end
- of the vector, but only if
- doing so would not exceed
- max vector maximal size
-
+ A contiguous data structure similar to a C++ vector.
+ A vector is a list of elements. Just like a C++ vector,
+ the contents may be reallocated when elements are added or deleted,
+ so references to elements are invalidated if the
+ vector is modified.
 ```
 
 - **Function**: `empty()  -> Bool`

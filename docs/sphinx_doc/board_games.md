@@ -1,6 +1,6 @@
 # Board games
 
-This page describes how one can write and test board games. Using **rulebook**, one can decrease by at least a order of magnitude the code complexity of writing digital implementations of board game.
+This page describes how one can write and test board games. Using **Rulebook**, you can reduce the code complexity of digital board game implementations by at least an order of magnitude.
 This page assumes that the reader is familiar with the typical characteristics of board games, and enough knowledge of programming to be able to implement a game of the complexity of **Risk**.
 
 ---
@@ -8,7 +8,7 @@ This page assumes that the reader is familiar with the typical characteristics o
 ## The history of board game programming.
 Board games have been for a long time both of interest and of disinterest for the field of programming.
 * **Abstract board games** have been deeply analyzed for the purpose of developing traditional AI systems[[1]](https://en.wikipedia.org/wiki/Deep_Blue_(chess_computer)), [[2]](https://en.wikipedia.org/wiki/AlphaGo). Abstract board games typically include a low number of distinct game rules that yield complex emergent dynamics.
-* **Commercial board games** instead have been of little interest for the field of artificial intelligence, as well as have been of low interest for the field of video game programming. **Commercial board games** often have large amounts of rules written on game components, such as **Magic: The gathering** cards, that offer to the players complex sequences of actions, while the total amount of information a game state presents is usually low, because the user must be able to keep track of it in their minds. Instead, Video games often offer large amounts information, offered to the player whenever the information is needed, while single game sequences are simpler. For example, in many games you can press any button of any interface in any order. While there exists various digital implementations of board games, for example [board game arena](https://en.boardgamearena.com), in practice the larger video game programming ecosystem is not tuned for the development of digital board games.
+* **Commercial board games** instead have been of little interest for the field of artificial intelligence, as well as of low interest for the field of video game programming. **Commercial board games** often have large amounts of rules written on game components, such as **Magic: The Gathering** cards, that offer players complex sequences of actions, while the total amount of information a game state presents is usually low because the user must keep track of it mentally. In contrast, video games often provide large amounts of information only when needed, while single game sequences are simpler. For example, in many games you can press any button of any interface in any order. While there exist various digital implementations of board games—for example [Board Game Arena](https://en.boardgamearena.com)—in practice the broader video game programming ecosystem is not tuned for the development of digital board games.
 
 
 ---
