@@ -54,6 +54,86 @@ RLC produces:
 * native libraries to reuse in other languages.
 * a wrapper to use the library in that language.
 
+## Command line options
+
+The `rlc` executable supports a large number of command line flags.  Most of
+them mirror the options of typical C/C++ compilers.  The options can be grouped
+in a few categories: **introspection**, **output generation**, **compilation** and
+**miscellaneous** features.  Below is a short description of every available
+flag.
+
+### Introspection options
+
+* `--token` – lex the input file and print the token stream.
+* `--dot` – dump the action graph in GraphViz format.
+* `--graph` – dump a machine parsable description of the action graph.
+* `--graph-filter <regex>` – print only actions whose name matches the regular
+  expression.
+* `--graph-only-actions` – omit non action functions from the dumped graphs.
+* `--graph-inline` – inline calls inside the graph visualization.
+* `--unchecked` – print the AST before type checking and exit.
+* `--type-checked` – print the AST after type checking but before template
+  expansion and exit.
+* `--before-template` – dump the IR just before templates are instantiated.
+* `--after-implicit` – dump the IR after implicit instantiation has completed.
+* `--flattened` – dump the IR after control flow has been flattened.
+* `--rlc` – print the final RLC IR and exit.
+* `--ir` – dump the generated LLVM IR.
+* `--mlir` – dump the MLIR representation.
+* `--print-ir-on-failure` – if compilation fails, print the IR that caused the
+  failure.
+* `--timing` – print the time taken by each compiler pass.
+* `--hide-position` – do not print file and line information in IR dumps.
+* `--hide-dl` – do not print the module data layout in IR dumps.
+* `--print-included-files` – instead of compiling, print the contents of all
+  files included during parsing.  Use `--hide-standard-lib-files` to omit files
+  coming from the standard library.
+
+### Output generation
+
+* `--header` – emit a C header describing the compiled module and exit.
+* `--c-sharp` – emit a C# wrapper and exit.
+* `--python` – emit a Python wrapper and exit.
+* `--godot` – emit a wrapper for Godot and exit.
+* `--compile` – generate an object file without linking.
+* `--shared` – produce a shared library instead of an executable.
+* `-o <file>` – path of the output file to generate.
+* `--clang <path>` – path to the `clang` binary used for linking.
+* `--rpath <path>` – add an rpath entry to the produced binary (may be repeated).
+
+### Compilation flags
+
+* `-O2` – enable optimizations and disable runtime checks.
+* `-g` – generate debug information.
+* `--emit-precondition-checks` – insert checks for function preconditions
+  (enabled by default, disabled by `-O2`).
+* `--emit-bound-checks` – insert array bounds checks (enabled by default,
+  disabled by `-O2`).
+* `--sanitize` – enable runtime sanitizer instrumentation.
+* `--fuzzer` – build the program as a fuzzer; implies `--sanitize`.
+* `--fuzzer-lib <path>` – path to the library implementing the fuzzer runtime.
+* `--pylib` – link against the Python interpreter.  When enabled assertions use
+  the symbol `rl_py_abort`.
+* `--pyrlc-lib <path>` – path to the Python wrapper support library; enables
+  `--pylib` automatically.
+* `--runtime-lib <path>` – path to the Rulebook runtime library.  If omitted the
+  compiler uses the runtime distributed with `rlc`.
+* `--target <triple>` – override the default target triple.
+* `--abort-symbol <name>` – specify the symbol to call when an assertion fails.
+* `--MD` – generate a makefile style dependency file alongside the output.
+* `--expect-fail` – return exit code 0 if compilation fails and 1 on success
+  (useful in tests).
+* `--verbose`/`-v` – print verbose information while invoking external tools.
+
+### Miscellaneous
+
+* `-i <dir>` – additional include directories searched when resolving imports.
+* `--pylib` and `--pyrlc-lib` – support linking against Python as described
+  above.
+* Extra object files or additional `.rl` sources can be passed on the command
+  line after the main input file.  Directories specified with `-i` are searched
+  for imported files.
+
 ## rlc-lsp and autocomplete
 
 rlc-lsp is a [language server](https://en.wikipedia.org/wiki/Language_Server_Protocol) for the Rulebook language. It allows users to get autocomplete in their ide.
