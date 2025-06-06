@@ -7,7 +7,7 @@ This page describes how you can connect Rulebook to other languages. It is not p
 We achieve interoperability with C almost trivially since Rulebook has the same ABI as C.
 
 ### Calling rulebook from C
-* Each Rulebook class is mapped onto a C struct. Each alternative is mapped on a struct with a union and a integer inside. You have to manually invoke the init, assign and drop method whenever you allocate, copy or destroy a rlc dastructure (unless the method is not available at all, which means that the datastruture is trivially initializable, copiable or destructible).
+* Each Rulebook class is mapped onto a C struct. Each alternative is mapped on a struct with a union and a integer inside. You have to manually invoke the init, assign and drop method whenever you allocate, copy or destroy a rlc datastructure (unless the method is not available at all, which means that the datastructure is trivially initializable, copiable or destructible).
 * Every enum is mapped on a struct with a integer inside.
 * Every Action Function frame is mapped on a struct with the frm variables and a integer inside.
 * All arguments of functions are taken by pointer, the return value is passed as first argument. The return value does not need to be initialized by the caller, but it must be destroyed by the caller.
@@ -30,7 +30,7 @@ Then you can use the header from C by including it, with a couple of macro defin
 // file.c
 #include <stdint.h>
 #include <stdbool.h>
-#define RLC_GET_FUNCTION_DECLS // required or the header does not emit function delcs
+#define RLC_GET_FUNCTION_DECLS // required or the header does not emit function decls
 #define RLC_GET_TYPE_DEFS // required or the header does not emit the types.
 #include "./header.h"
 
@@ -72,7 +72,7 @@ act sequence(ctx Context context) -> Sequence:
 #include <stdbool.h>
 #include <stdint.h>
 #define RLC_GET_FUNCTION_DECLS // required or the header does not emit function
-                               // delcs
+                               // decls
 #define RLC_GET_TYPE_DECLS
 #define RLC_GET_TYPE_DEFS // required or the header does not emit the wrapper.
 #include "./header.h"
@@ -132,7 +132,7 @@ write the c
 #include <stdbool.h>
 #include <stdint.h>
 #define RLC_GET_FUNCTION_DECLS // required or the header does not emit function
-                               // delcs
+                               // decls
 #define RLC_GET_TYPE_DECLS
 #define RLC_GET_TYPE_DEFS // required or the header does not emit the wrapper.
 #include "./header.h"
@@ -179,7 +179,7 @@ act sequence(ctx Context context) -> Sequence:
 #include <stdbool.h>
 #include <stdint.h>
 #define RLC_GET_FUNCTION_DECLS // required or the header does not emit function
-                               // delcs
+                               // decls
 #define RLC_GET_TYPE_DECLS
 #define RLC_GET_TYPE_DEFS // required or the header does not emit the wrapper.
 #include "./header.h"
