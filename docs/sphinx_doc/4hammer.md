@@ -912,7 +912,7 @@ func on_state_changed():
 		quad.visible = false
     # for all actions that can be taken
 	for action in GlobalRules.valid_actions:
-		var unwrapped = action.unwrap() # the the raw valid action
+                var unwrapped = action.unwrap() # the raw valid action
 		if unwrapped.members_count() != 1: # if has not exactly one argument we don't know what the semantics are, we will ignore it.
 			continue
 		if not unwrapped.get_member(0) is RLCBoardPosition: # if the only argument is not a RLCBoardPosition we don't know the semantics
@@ -941,22 +941,22 @@ act move(ctx Board board, ctx UnitID unit, frm StatModifier additional_movement)
     ...
 ```
 
-Without knowing anything related to the UI, the user declared a `move_to` action, never referenced by any godot specific code. Since it accepts a `BoardPosion`, it is auto detected by the UI code.
+Without knowing anything related to the UI, the user declared a `move_to` action, never referenced by any Godot-specific code. Since it accepts a `BoardPosition`, it is auto detected by the UI code.
 
-Of course, this is very inefficient. In practice it does not matter since the objective of 4hammer is not to draw billions of polygons on screen, but it one wished to make it more efficient it could have enumerated all possible types of valid actions instead of introspecting actions at run time, and then checked if those particular actions where valid.
+Of course, this is very inefficient. In practice it does not matter since the objective of 4hammer is not to draw billions of polygons on screen, but if one wished to make it more efficient it could have enumerated all possible types of valid actions instead of introspecting actions at run time, and then checked if those particular actions were valid.
 
-A even more efficient, but less flexible implementation would have been to to directly invoke a call back from RLC code yielding the most optimal implementation, but that would require some extra trickery to make sure machine learning stuff still works.
+An even more efficient, but less flexible implementation would have been to directly invoke a callback from RLC code yielding the most optimal implementation, but that would require some extra trickery to make sure machine learning stuff still works.
 
 ### Supported autoconfigurations
 * all actions that accepts a single BoardPosition are interpreted as the user being allowed to click on the board.
-* all actions that accept a UnitID are interpred as the user wishing to click on a unit. All valid units glow and can be clicked.
-* all actions taht accept a ModelID display the model glowing and allow the user to click on it. The rule writer must specify which unit that model belongs to, to be able to tell them apart.
-* all actions that accepts 2 UnitID are interpretd as the user wishing to make interact the first unit with the second unit. For example shooting with a unit onto another. The UI allows to drag a arrow from the start unit torward the target unit.
-* actions that accept a single bool display to the user the name of the action phraased as a question.
-* actions that accept a enum display the valid choises on screen for the player to select.
+* all actions that accept a UnitID are interpreted as the user wishing to click on a unit. All valid units glow and can be clicked.
+* all actions that accept a ModelID display the model glowing and allow the user to click on it. The rule writer must specify which unit that model belongs to, to be able to tell them apart.
+* all actions that accept 2 UnitID are interpreted as the user wishing to make the first unit interact with the second unit. For example shooting with a unit onto another. The UI allows you to drag an arrow from the start unit toward the target unit.
+* actions that accept a single bool display to the user the name of the action phrased as a question.
+* actions that accept an enum display the valid choices on screen for the player to select.
 
 ## Remote execution
-Since the entirety of the game rules are writte into Rulebook action functions, we obtain for free remote execution. [Here](https://github.com/rl-language/4Hammer/blob/master/scripts/server.gd#L1) is the trivial implementation of the server component on the side of godot, that waits for connections that then issue server commands. Some special server commands are handle nativelly by godot, such as exfiltrating the current image on screen and send it over network or stopping the rendering of the screen entirelly.
+Since the entirety of the game rules are written into Rulebook action functions, we obtain for free remote execution. [Here](https://github.com/rl-language/4Hammer/blob/master/scripts/server.gd#L1) is the trivial implementation of the server component on the side of Godot, that waits for connections that then issue server commands. Some special server commands are handled natively by Godot, such as exfiltrating the current image on screen and sending it over the network or stopping the rendering of the screen entirely.
 
 Every other action is simply a rulebook action implied by the rules of the game. Every time a rule programmer changes one of those rules, the remote execution mechanism updates itself automatically. Furthermore, since the network is issuing commands exactly like in process graphical elements are, the only thing that cannot be tested over network is the act on interacting on ui elements themselves.
 
