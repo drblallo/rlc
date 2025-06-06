@@ -123,17 +123,17 @@ rlc-random black_jack.rl
 ```
 
 You will see that it prints the actions to be executed in a game, this include the shuffling of the deck.
-You can visualize what is happeing with
+You can visualize what is happening with
 
 ```
 rlc-random black_jack.rl -o game.log
 rlc-action black_jack.rl game.log -pp
 ```
 
-You will be able to visualize the evolution of the deck while it is being suffled, and then see which action the player will take.
+You will be able to visualize the evolution of the deck while it is being shuffled, and then see which action the player will take.
 
 
-Now that we have visualized a random game, we can start learning! Tou can run `rlc-learn` to do so:
+Now that we have visualized a random game, we can start learning! You can run `rlc-learn` to do so:
 ```bash
 rlc-learn black_jack.rl |& tee log.txt
 ```
