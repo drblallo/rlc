@@ -172,11 +172,7 @@
 - **Function**: `append(T value) `
 
 ```text
- A contiguous data structure similar to a C++ vector.
- A vector is a list of elements. Just like a C++ vector,
- the contents may be reallocated when elements are added or deleted,
- so references to elements are invalidated if the
- vector is modified.
+ same as vector::append
 ```
 
 - **Function**: `empty()  -> Bool`

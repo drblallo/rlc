@@ -3,11 +3,11 @@
 
 Machine learning is being unleashed onto the world with tremendous force. Year by year, machines solve more and more problems once considered intractable and achieve superhuman results.
 
-![ML performances](./imgs/ml_progress.jpeg)
+![ML performance](./imgs/ml_progress.jpeg)
 
-Reasoning and general game-playing still stand unsolved. We have no doubt algorithm improvements will soon yield super-human performance in those categories too.
+Reasoning and general game-playing still stand unsolved. We have no doubt algorithm improvements will soon yield superhuman performance in those categories too.
 Here is a picture taken from https://proceedings.mlr.press/v202/schwarzer23a/schwarzer23a.pdf.
-The X axis is the average competence at 26 atari games achieved by various algorithms, where 1 is the human-level ability, while the Y axis is how many hours of A100 GPUs took on average to get there.
+The X axis is the average competence at 26 Atari games achieved by various algorithms, where 1 is the human-level ability, while the Y axis is how many hours of A100 GPUs took on average to get there.
 
 ![Reinforcement learning game progress](./imgs/rl_game_progress.webp)
 
@@ -19,7 +19,7 @@ Thankfully, it seems that we will not have to wait that long to obtain that [cos
 Still, 150 dollars seems a low enough cost that we would expect game companies to start adopting machine-learning techniques to at least validate their design before release.
 
 However, this is not happening. We can observe that most of the machine learning datasets about games are either:
-* Games solved by directly executing the engine and by inspecting the framebuffer, such as atari games.
+* Games solved by directly executing the engine and by inspecting the framebuffer, such as Atari games.
 * Games with simple rules but large combinatorial complexity, such as chess and go, which can be easily implemented even multiple times for different purposes (interacting with engines, machine learning ...)
 
 Games and simulations with sprawling amounts of rules that both interact with game engines and machine learning tools are almost non-existent.

@@ -51,7 +51,7 @@ rlc example.rl -o executable
 
 ## Training and Running
 
-Now that you've ensured your system works, download the `black jack` example from [here](https://github.com/rl-language/rlc/tool/rlc/test/examples/black_jack.rl) and save it in a file in the directory we created at the start of this example.
+Now that you've ensured your system works, download the `Blackjack` example from [here](https://github.com/rl-language/rlc/tool/rlc/test/examples/black_jack.rl) and save it in the directory we created at the start of this example.
 
 Blackjack is an example that shows how to handle games with randomness and imperfect information. Indeed, the actions taken by the real user are usually just one or two, while most of the game is spent by the `randomness player` shuffling the deck—a fake player that performs actions at random.
 
@@ -120,7 +120,7 @@ This command will run one action at a time and let you visualize the game by inv
 
 ## Building on Top of It
 
-Until now, we have seen how to write, train, run, and visualize a game. Of course, this is not the end of the road. After you have trained a network, you probably wish to use the rules you have written in a real environment. Let us see how to do so by writing a Python script that can interact with the `RL` black jack implementation.
+Until now, we have seen how to write, train, run, and visualize a game. Of course, this is not the end of the road. After you have trained a network, you probably wish to use the rules you have written in a real environment. Let us see how to do so by writing a Python script that can interact with the `RL` Blackjack implementation.
 
 Create a file called `example.py`, and write the following content:
 ```python
@@ -163,7 +163,7 @@ You can run this program with the following command, using a shell with the acti
 python example.py
 ```
 
-As you can see, you are able to play black jack driven by a Python script. Of course, you could already do so with the `rlc-action` command provided by the `rl_language` package, but this example shows that `RL` programs can be easily used from other languages such as Python or C++. This allows you to reuse the same `RL` code you have written to train the network in production too, building other tools on top of it!
+As you can see, you are able to play Blackjack driven by a Python script. Of course, you could already do so with the `rlc-action` command provided by the `rl_language` package, but this example shows that `RL` programs can be easily used from other languages such as Python or C++. This allows you to reuse the same `RL` code you have written to train the network in production too, building other tools on top of it!
 
 You can also load the network you have trained and use it to play games, but such a setup is a little too complex to include in this introductory document and will be shown later.
 
