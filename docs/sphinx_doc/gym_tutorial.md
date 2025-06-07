@@ -19,7 +19,7 @@ Specifically, we will cover:
 - Checking for the end of a game.
 - Managing secret information and handling randomness.
 
-Since there are too many GYM-like wrappers, we provide general functions that you can reuse to write the wrapper with the right interface for your usecase.
+Since there are many Gym-like wrappers, we provide general functions that you can reuse to implement a wrapper with the interface that best fits your use case.
 
 
 ## Installing `rl_language_core`
