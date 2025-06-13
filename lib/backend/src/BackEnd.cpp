@@ -438,12 +438,6 @@ static int linkLibraries(
 
 	if (!maybeRealPath and (emitSanitizerInstrumentation or linkAgainstFuzzer))
 	{
-		if (info.isWindows())
-		{
-			llvm::consumeError(maybeRealPath.takeError());
-			llvm::errs() << "sanitizers and fuzzer are not supported on windows\n";
-			return -1;
-		}
 		llvm::consumeError(maybeRealPath.takeError());
 		llvm::errs()
 				<< "could not find clang, it is mandatory when using the fuzzer or the "
@@ -464,7 +458,7 @@ static int linkLibraries(
 	llvm::SmallVector<std::string, 4> argSource;
 	argSource.push_back("clang");
 	argSource.push_back(library.getFilename().str());
-	argSource.push_back("-target=" + info.tripleToString());
+	argSource.push_back("--target=" + info.tripleToString());
 	if (info.isWindows())
 	{
 		argSource.push_back("-fuse-ld=lld");
@@ -472,6 +466,7 @@ static int linkLibraries(
 		argSource.push_back("-nodefaultlibs");
 		argSource.push_back("-Wl,-nodefaultlib");
 		argSource.push_back("-Wl,-subsystem:console");
+		argSource.push_back("-O2");
 	}
 	else if (not info.isMacOS())
 		argSource.push_back("-lm");
@@ -511,8 +506,7 @@ static int linkLibraries(
 			argSource.push_back("-no-pie");
 		}
 	}
-	if ((emitSanitizerInstrumentation or linkAgainstFuzzer) and
-			not info.isWindows())
+	if ((emitSanitizerInstrumentation or linkAgainstFuzzer))
 	{
 		std::string arg("-fsanitize=");
 		if (emitSanitizerInstrumentation)

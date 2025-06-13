@@ -62,6 +62,10 @@ def build_rlc(
         "-DCMAKE_EXPORT_COMPILE_COMMANDS=True",
         "-G",
         "Ninja",
+        "-DRLC_VCRUNTIME=../vcruntime.lib",
+        "-DRLC_UCRT=../ucrt.lib",
+        "-DRLC_MSVCRT=../msvcrt.lib",
+        "-DRLC_KERNEL32=../kernel32.Lib",
         "-DMLIR_DIR={}/lib/cmake/mlir".format(llvm_install_dir),
         "-DLLVM_DIR={}/lib/cmake/llvm".format(llvm_install_dir),
         "-DClang_DIR={}/lib/cmake/clang".format(llvm_install_dir),
@@ -75,13 +79,8 @@ def build_rlc(
         "-DHAVE_STD_REGEX=ON",
         "-DCMAKE_CXX_FLAGS=-Wno-invalid-offsetof -Wno-unused-command-line-argument",
         "-DRUN_HAVE_STD_REGEX=1",
-        "-DPython3_EXECUTABLE:FILEPATH={}".format("./.venv/bin/python"),
-        (
-            "-DCMAKE_EXE_LINKER_FLAGS=-static-libgcc -static-libstdc++"
-            if build_type == "Release" and not is_windows and not is_mac
-            else ""
-        ),
-    )
+        "-DPython3_EXECUTABLE:FILEPATH={}".format("./.venv/bin/python" if not is_windows else ".venv/Scripts/python.exe"),
+        "-DCMAKE_EXE_LINKER_FLAGS=-static-libgcc -static-libstdc++" if build_type == "Release" and not is_windows and not is_mac else "")
 
 
 def build_llvm(

@@ -467,7 +467,8 @@ static mlir::rlc::Driver configureDriver(
 					RUNTIME_LIBRARY_FILENAME);
 	}
 
-	objectFiles.push_back(runtimeLibPath);
+	if (not emitFuzzer)
+		objectFiles.push_back(runtimeLibPath);
 
 	Driver driver(srcManager, inputs, outputFile, OS);
 	driver.setRequest(getRequest());
